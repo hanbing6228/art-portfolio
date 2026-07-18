@@ -165,15 +165,19 @@
     if (meta && meta.image) { btn.textContent = "Preview"; btn.disabled = false; showPreview(meta.image, "Preview loaded!"); return; }
 
     btn.textContent = "Grabbing…";
-    // 2) read the page's own og:image through a CORS proxy (follows pin.it → pinterest)
+    // 2) our own server-side grabber (crawler UA gets past Pinterest's login wall)
+    var api = await grabViaApi(url);
+    if (api) { btn.textContent = "Preview"; btn.disabled = false; showPreview(api, "Got the picture!"); return; }
+
+    // 3) read the page's own og:image through a CORS proxy (follows pin.it → pinterest)
     var og = await readOgImage(url);
     if (og) { btn.textContent = "Preview"; btn.disabled = false; showPreview(og, "Got the picture!"); return; }
 
-    // 3) render the page with a JS-capable reader and pull the real image out
+    // 4) render the page with a JS-capable reader and pull the real image out
     var scraped = await scrapeImage(url);
     if (scraped) { btn.textContent = "Preview"; btn.disabled = false; showPreview(scraped, "Got the picture!"); return; }
 
-    // 4) last resort: a screenshot of the page
+    // 5) last resort: a screenshot of the page
     btn.textContent = "Preview"; btn.disabled = false;
     var shot = screenshotUrl(url);
     var pv3 = document.getElementById("favInPrev");
@@ -189,6 +193,16 @@
     if (msg) toast(msg);
   }
   function bumpPin(u) { return u.replace(/\/(?:\d{2,3}x\d{0,3}|\d{2,3}x)\//, "/736x/"); }
+  // our Vercel serverless grabber — most reliable for Pinterest (see api/grab.js)
+  async function grabViaApi(url) {
+    try {
+      var res = await fetch("/api/grab?url=" + encodeURIComponent(url));
+      if (!res.ok) return null;
+      var j = await res.json();
+      if (j && j.title) { var t = document.getElementById("favInTitle"); if (t && !t.value) t.value = j.title; }
+      return j && j.image ? j.image : null;
+    } catch (e) { return null; }
+  }
   // Fetch the raw HTML through a CORS proxy and read <meta og:image>. The proxy
   // follows the pin.it redirect server-side, so we get the real pinterest page.
   async function readOgImage(url) {

@@ -1,6 +1,6 @@
 /* Service worker: network-first so deployed updates show right away;
    falls back to cache when offline. */
-const CACHE = "art-portfolio-v18";
+const CACHE = "art-portfolio-v19";
 const ASSETS = [
   "./",
   "./index.html",
@@ -41,7 +41,9 @@ self.addEventListener("activate", (e) => {
 // cache, and only use the cache if the network fails (offline).
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  if (new URL(e.request.url).origin !== self.location.origin) return; // let cross-origin (Firebase/gstatic) pass through
+  const u = new URL(e.request.url);
+  if (u.origin !== self.location.origin) return; // let cross-origin (Firebase/gstatic) pass through
+  if (u.pathname.startsWith("/api/")) return;    // serverless endpoints: always live, never cached
   e.respondWith(
     fetch(e.request)
       .then((res) => {
