@@ -197,6 +197,8 @@
     pause: svg('<rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="' + C.teal + '"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="' + C.teal + '"/>'),
     next: svg('<path d="M6 5l9 7-9 7Z" fill="' + C.sage + '" stroke="' + C.teal + '"/><path d="M17 5v14" stroke="' + C.teal + '"/>'),
     prev: svg('<path d="M18 5l-9 7 9 7Z" fill="' + C.sage + '" stroke="' + C.teal + '"/><path d="M7 5v14" stroke="' + C.teal + '"/>'),
+    undo: svg('<path d="M4 9h10a5.5 5.5 0 1 1 0 11H9" fill="none"/><path d="M4 9l4-4M4 9l4 4"/>'),
+    redo: svg('<path d="M20 9H10a5.5 5.5 0 1 0 0 11h5" fill="none"/><path d="M20 9l-4-4M20 9l-4 4"/>'),
     link: svg(
       '<path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5" stroke="' + C.teal + '"/>' +
       '<path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.5-1.5" stroke="' + C.teal + '"/>'

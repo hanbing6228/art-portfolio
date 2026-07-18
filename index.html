@@ -65,11 +65,21 @@
     <!-- ============ DOODLE ============ -->
     <section id="doodle" class="page">
       <h2 class="page-title">Doodle Pad <span class="ic" data-icon="brush"></span></h2>
-      <p class="page-sub">Draw with your finger, then save it!</p>
+      <p class="page-sub">Draw with your finger or pencil, then save it!</p>
       <div class="doodle-tools" id="doodleColors"></div>
       <div class="doodle-tools">
-        <label class="tool-chip">Brush <input type="range" id="brushSize" min="2" max="40" value="8" /></label>
-        <button class="tool-chip" id="eraserBtn"><span class="ic" data-icon="eraser"></span> Eraser</button>
+        <label class="color-input-wrap" title="Pick any color"><input type="color" id="colorPicker" value="#2f5d55" /></label>
+        <button class="tool-chip brush-btn active" data-brush="pen"><span class="ic" data-icon="doodle"></span> Pen</button>
+        <button class="tool-chip brush-btn" data-brush="marker"><span class="ic" data-icon="brush"></span> Marker</button>
+        <button class="tool-chip brush-btn" data-brush="eraser"><span class="ic" data-icon="eraser"></span> Eraser</button>
+      </div>
+      <div class="doodle-tools">
+        <label class="tool-chip">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
+        <label class="tool-chip">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
+      </div>
+      <div class="doodle-tools">
+        <button class="tool-chip" id="undoBtn"><span class="ic" data-icon="undo"></span></button>
+        <button class="tool-chip" id="redoBtn"><span class="ic" data-icon="redo"></span></button>
         <button class="tool-chip" id="clearBtn"><span class="ic" data-icon="trash"></span> Clear</button>
         <button class="tool-chip primary" id="saveDoodle"><span class="ic" data-icon="save"></span> Save</button>
       </div>

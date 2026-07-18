@@ -270,6 +270,13 @@ body {
   box-shadow: var(--shadow); cursor: pointer;
 }
 .color-dot.active { outline: 3px solid var(--deep); }
+.color-input-wrap { display: inline-flex; align-items: center; }
+#colorPicker { width: 40px; height: 40px; border: 2px solid var(--light); border-radius: 50%; padding: 0; background: none; cursor: pointer; }
+#colorPicker::-webkit-color-swatch-wrapper { padding: 3px; }
+#colorPicker::-webkit-color-swatch { border: none; border-radius: 50%; }
+#colorPicker::-moz-color-swatch { border: none; border-radius: 50%; }
+.brush-btn.active { background: var(--mid); color: #fff; border-color: var(--mid); }
+.tool-chip[disabled] { opacity: 0.4; pointer-events: none; }
 .doodle-canvas {
   width: 100%; aspect-ratio: 1; background: #fff; border-radius: 16px;
   box-shadow: var(--shadow); border: 2px solid var(--light); touch-action: none;

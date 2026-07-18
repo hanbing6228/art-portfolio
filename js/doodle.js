@@ -1,108 +1,136 @@
-/* ===== Doodle pad: touch + mouse drawing, colors, eraser, save ===== */
+/* ===== Doodle pad (upgraded, still simple) =====
+   Pointer drawing with pressure, pen / marker / eraser brushes, size &
+   opacity sliders, color picker + palette, undo / redo, clear, save PNG. */
 (function () {
-  const COLORS = ["#2f5233", "#5a8f4e", "#7cb342", "#a8d08d", "#f3c969", "#e5484d", "#4a90d9", "#8a5a3c", "#111111"];
+  var PALETTE = ["#2f5d55", "#60925e", "#7cb342", "#a9c6a0", "#c8f5f9", "#f3c969", "#e5764b", "#e5484d", "#8a5a3c", "#d9b3b3", "#4a90d9", "#7b5ea7", "#111111", "#ffffff"];
 
-  let canvas, ctx, drawing = false, current = COLORS[0], brush = 8, erasing = false;
-  let lastX = 0, lastY = 0, ready = false;
+  var canvas, ctx, drawing = false, ready = false;
+  var color = "#2f5d55", brush = 8, opacity = 1, tool = "pen";
+  var lastX = 0, lastY = 0;
+  var undoStack = [], redoStack = [];
 
-  function setupCanvas() {
+  function setupCanvas(keep) {
     canvas = $("#doodleCanvas");
     if (!canvas) return;
-    // size the backing store to the displayed size (crisp on retina)
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    var prev = (keep && ready) ? canvas.toDataURL() : null;
+    var rect = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
     canvas.height = Math.max(1, Math.round(rect.height * dpr));
     ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
     ready = rect.width > 0;
+    if (prev) { var im = new Image(); im.onload = function () { ctx.drawImage(im, 0, 0, rect.width, rect.height); }; im.src = prev; }
+    else if (ready && !undoStack.length) pushHistory();
   }
 
-  function pos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const t = e.touches ? e.touches[0] : e;
-    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  /* ---------- history ---------- */
+  function pushHistory() {
+    try { undoStack.push(canvas.toDataURL()); } catch (e) { return; }
+    if (undoStack.length > 25) undoStack.shift();
+    redoStack = [];
+    updateHistBtns();
+  }
+  function restore(dataURL) {
+    var rect = canvas.getBoundingClientRect();
+    var im = new Image();
+    im.onload = function () { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, rect.width, rect.height); ctx.drawImage(im, 0, 0, rect.width, rect.height); };
+    im.src = dataURL;
+  }
+  function undo() { if (undoStack.length > 1) { redoStack.push(undoStack.pop()); restore(undoStack[undoStack.length - 1]); updateHistBtns(); } }
+  function redo() { if (redoStack.length) { var s = redoStack.pop(); undoStack.push(s); restore(s); updateHistBtns(); } }
+  function updateHistBtns() {
+    var u = $("#undoBtn"), r = $("#redoBtn");
+    if (u) u.disabled = undoStack.length <= 1;
+    if (r) r.disabled = !redoStack.length;
   }
 
+  /* ---------- drawing ---------- */
+  function pos(e) { var rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+  function strokeStyleFor(pressure) {
+    if (tool === "eraser") return "rgba(255,255,255,1)";
+    var a = tool === "marker" ? opacity * 0.35 : opacity;
+    return hexToRgba(color, a);
+  }
+  function widthFor(pressure) {
+    var w = brush * (tool === "marker" ? 1.6 : 1);
+    var pr = (pressure && pressure > 0 && pressure !== 0.5) ? pressure : 0.6; // pens/touch vary; mouse ~0.5
+    return Math.max(1, w * (0.55 + 0.9 * pr));
+  }
   function start(e) {
+    if (!ready) return;
     e.preventDefault();
     drawing = true;
-    const p = pos(e);
-    lastX = p.x; lastY = p.y;
-    // dot on tap
-    ctx.beginPath();
-    ctx.fillStyle = erasing ? "#ffffff" : current;
-    ctx.arc(p.x, p.y, brush / 2, 0, Math.PI * 2);
-    ctx.fill();
+    var p = pos(e); lastX = p.x; lastY = p.y;
+    ctx.strokeStyle = strokeStyleFor(e.pressure);
+    ctx.fillStyle = strokeStyleFor(e.pressure);
+    var w = widthFor(e.pressure);
+    ctx.beginPath(); ctx.arc(p.x, p.y, w / 2, 0, Math.PI * 2); ctx.fill();
   }
   function move(e) {
     if (!drawing) return;
     e.preventDefault();
-    const p = pos(e);
-    ctx.strokeStyle = erasing ? "#ffffff" : current;
-    ctx.lineWidth = brush;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    var p = pos(e);
+    ctx.strokeStyle = strokeStyleFor(e.pressure);
+    ctx.lineWidth = widthFor(e.pressure);
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
     lastX = p.x; lastY = p.y;
   }
-  function end() { drawing = false; }
+  function end() { if (drawing) { drawing = false; pushHistory(); } }
 
+  function hexToRgba(hex, a) {
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+    var n = parseInt(hex, 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+
+  /* ---------- controls ---------- */
   function renderColors() {
-    const wrap = $("#doodleColors");
+    var wrap = $("#doodleColors");
     if (!wrap) return;
-    COLORS.forEach((c, i) => {
-      const d = document.createElement("div");
+    wrap.innerHTML = "";
+    PALETTE.forEach(function (c, i) {
+      var d = document.createElement("div");
       d.className = "color-dot" + (i === 0 ? " active" : "");
       d.style.background = c;
-      d.addEventListener("click", () => {
-        current = c;
-        erasing = false;
-        $("#eraserBtn").classList.remove("primary");
-        $$(".color-dot").forEach((x) => x.classList.remove("active"));
-        d.classList.add("active");
-      });
+      d.addEventListener("click", function () { setColor(c); $$(".color-dot").forEach(function (x) { x.classList.remove("active"); }); d.classList.add("active"); });
       wrap.appendChild(d);
     });
   }
+  function setColor(c) { color = c; if (tool === "eraser") setTool("pen"); var cp = $("#colorPicker"); if (cp) cp.value = c.length === 7 ? c : cp.value; }
+  function setTool(t) {
+    tool = t;
+    $$(".brush-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.brush === t); });
+  }
 
   function initControls() {
-    $("#brushSize").addEventListener("input", (e) => (brush = +e.target.value));
-    $("#eraserBtn").addEventListener("click", (e) => {
-      erasing = !erasing;
-      e.currentTarget.classList.toggle("primary", erasing);
+    $("#brushSize").addEventListener("input", function (e) { brush = +e.target.value; });
+    $("#brushOpacity").addEventListener("input", function (e) { opacity = +e.target.value / 100; });
+    $("#colorPicker").addEventListener("input", function (e) { setColor(e.target.value); $$(".color-dot").forEach(function (x) { x.classList.remove("active"); }); });
+    $$(".brush-btn").forEach(function (b) { b.addEventListener("click", function () { setTool(b.dataset.brush); }); });
+    $("#undoBtn").addEventListener("click", undo);
+    $("#redoBtn").addEventListener("click", redo);
+    $("#clearBtn").addEventListener("click", function () {
+      var rect = canvas.getBoundingClientRect();
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, rect.width, rect.height);
+      pushHistory();
     });
-    $("#clearBtn").addEventListener("click", () => {
-      const rect = canvas.getBoundingClientRect();
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, rect.width, rect.height);
-    });
-    $("#saveDoodle").addEventListener("click", () => {
-      try {
-        const link = document.createElement("a");
-        link.download = "my-doodle.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        toast("Saved your doodle!");
-        if (window.Achievements) Achievements.bump("doodlesSaved");
-      } catch (e) {
-        toast("Couldn't save");
-      }
+    $("#saveDoodle").addEventListener("click", function () {
+      try { var link = document.createElement("a"); link.download = "my-doodle.png"; link.href = canvas.toDataURL("image/png"); link.click(); toast("Saved your doodle!"); if (window.Achievements) Achievements.bump("doodlesSaved"); }
+      catch (e) { toast("Couldn't save"); }
     });
   }
 
   function bindDrawing() {
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", end);
-    canvas.addEventListener("touchstart", start, { passive: false });
-    canvas.addEventListener("touchmove", move, { passive: false });
-    canvas.addEventListener("touchend", end);
+    canvas.addEventListener("pointerdown", start);
+    canvas.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("pointerleave", function () {});
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -111,23 +139,9 @@
     renderColors();
     initControls();
     bindDrawing();
-
-    // The doodle page is hidden at load, so the canvas has 0 size until shown.
-    // Initialize it the first time the user opens the Doodle tab.
-    document.addEventListener("pagechange", (e) => {
-      if (e.detail === "doodle" && !ready) setupCanvas();
-    });
-    // re-fit if the canvas gets its real size after layout / orientation change
-    let resizeTimer;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        const img = canvas.toDataURL();
-        setupCanvas();
-        const image = new Image();
-        image.onload = () => ctx.drawImage(image, 0, 0, canvas.getBoundingClientRect().width, canvas.getBoundingClientRect().height);
-        image.src = img;
-      }, 250);
-    });
+    updateHistBtns();
+    document.addEventListener("pagechange", function (e) { if (e.detail === "doodle" && !ready) { setupCanvas(); } });
+    var t;
+    window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(function () { if (ready) setupCanvas(true); }, 250); });
   });
 })();
