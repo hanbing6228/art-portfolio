@@ -65,7 +65,11 @@
     <!-- ============ DOODLE ============ -->
     <section id="doodle" class="page">
       <h2 class="page-title">Doodle Pad <span class="ic" data-icon="brush"></span></h2>
-      <p class="page-sub">Draw with your finger or pencil, then save it!</p>
+      <p class="page-sub">Draw solo, or draw together with friends live!</p>
+      <div class="doodle-mode" id="doodleMode">
+        <button class="tool-chip mode-btn active" data-mode="solo"><span class="ic" data-icon="doodle"></span> My Doodle</button>
+        <button class="tool-chip mode-btn" data-mode="live" id="liveModeBtn"><span class="ic" data-icon="chat"></span> Draw Together</button>
+      </div>
       <div class="doodle-tools" id="doodleColors"></div>
       <div class="doodle-tools">
         <label class="color-input-wrap" title="Pick any color"><input type="color" id="colorPicker" value="#2f5d55" /></label>
@@ -77,13 +81,31 @@
         <label class="tool-chip">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
         <label class="tool-chip">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
       </div>
-      <div class="doodle-tools">
-        <button class="tool-chip" id="undoBtn"><span class="ic" data-icon="undo"></span></button>
-        <button class="tool-chip" id="redoBtn"><span class="ic" data-icon="redo"></span></button>
-        <button class="tool-chip" id="clearBtn"><span class="ic" data-icon="trash"></span> Clear</button>
-        <button class="tool-chip primary" id="saveDoodle"><span class="ic" data-icon="save"></span> Save</button>
+      <div id="soloWrap">
+        <div class="doodle-tools">
+          <button class="tool-chip" id="undoBtn"><span class="ic" data-icon="undo"></span></button>
+          <button class="tool-chip" id="redoBtn"><span class="ic" data-icon="redo"></span></button>
+          <button class="tool-chip" id="clearBtn"><span class="ic" data-icon="trash"></span> Clear</button>
+          <button class="tool-chip primary" id="saveDoodle"><span class="ic" data-icon="save"></span> Save</button>
+        </div>
+        <canvas id="doodleCanvas" class="doodle-canvas"></canvas>
       </div>
-      <canvas id="doodleCanvas" class="doodle-canvas"></canvas>
+
+      <div id="liveBoardWrap" hidden>
+        <div class="live-head">
+          <span class="chat-online" id="boardOnline"><span class="online-dot"></span> <span id="boardOnlineN">1</span> drawing</span>
+          <span class="live-actions">
+            <button class="tool-chip" id="boardClear"><span class="ic" data-icon="trash"></span> Clear</button>
+            <button class="tool-chip primary" id="boardSave"><span class="ic" data-icon="save"></span> Save</button>
+          </span>
+        </div>
+        <canvas id="boardCanvas" class="doodle-canvas"></canvas>
+        <div class="sticker-bar" id="stickerBar"></div>
+        <div class="board-social">
+          <button class="tool-chip" id="boardLike"><span class="ic" data-icon="heart"></span> <span id="boardLikeN">0</span></button>
+          <span class="page-sub" style="margin:0">Comment about it in the About chat 💬</span>
+        </div>
+      </div>
     </section>
 
     <!-- ============ QUIZ ============ -->
@@ -165,6 +187,7 @@
   <script src="js/gallery.js"></script>
   <script src="js/favorites.js"></script>
   <script src="js/doodle.js"></script>
+  <script src="js/collab.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/guestbook.js"></script>
   <script src="js/music.js"></script>

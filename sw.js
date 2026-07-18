@@ -1,6 +1,6 @@
 /* Service worker: network-first so deployed updates show right away;
    falls back to cache when offline. */
-const CACHE = "art-portfolio-v13";
+const CACHE = "art-portfolio-v14";
 const ASSETS = [
   "./",
   "./index.html",
@@ -15,6 +15,7 @@ const ASSETS = [
   "./js/gallery.js",
   "./js/favorites.js",
   "./js/doodle.js",
+  "./js/collab.js",
   "./js/quiz.js",
   "./js/guestbook.js",
   "./js/music.js",

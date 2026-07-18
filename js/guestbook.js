@@ -85,7 +85,8 @@
   function floatIcon(layer, name) {
     var span = document.createElement("span");
     span.className = "float-react";
-    span.innerHTML = (window.ICONS && ICONS[name]) || "";
+    if (window.ICONS && ICONS[name]) span.innerHTML = ICONS[name];
+    else { span.textContent = name || ""; span.classList.add("emoji"); } // snapchat-style sticker
     span.style.left = (10 + Math.floor((0.15 + 0.7 * fract(name)) * 80)) + "%";
     layer.appendChild(span);
     span.animate(

@@ -107,6 +107,40 @@
     async like(artId) { await bumpLike(artId, 1); },
     async unlike(artId) { await bumpLike(artId, -1); },
 
+    /* ---------- shared live board (collaborative drawing) ---------- */
+    watchBoard(cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var q = F.query(F.collection(db, "board"), F.orderBy("created", "asc"), F.limit(2000));
+        unsub = F.onSnapshot(q, function (snap) {
+          cb(snap.docs.map(function (d) { var x = d.data(); return { id: d.id, c: x.c, w: x.w, p: x.p || [], cid: x.cid, tool: x.tool }; }));
+        }, function (e) { console.warn("[cloud] board watch:", e.message || e); });
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+    async addStroke(stroke) {
+      if (!(await ok()) || !db) return false;
+      try { await F.addDoc(F.collection(db, "board"), Object.assign({}, stroke, { created: F.serverTimestamp() })); return true; }
+      catch (e) { console.warn("[cloud] stroke:", e.message || e); return false; }
+    },
+    async clearBoard() {
+      if (!(await ok()) || !db) return false;
+      try {
+        var snap = await F.getDocs(F.collection(db, "board"));
+        await Promise.all(snap.docs.map(function (d) { return F.deleteDoc(F.doc(db, "board", d.id)); }));
+        return true;
+      } catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] board clear:", e.message || e); return false; }
+    },
+    watchLike(id, cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        unsub = F.onSnapshot(F.doc(db, "likes", id), function (d) { cb(d.exists() ? Math.max(0, (d.data().count) || 0) : 0); }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+
     /* ---------- profile (owner writes) ---------- */
     async getProfile() {
       if (!(await ok()) || !db) return null;

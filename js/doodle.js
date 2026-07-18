@@ -9,6 +9,9 @@
   var lastX = 0, lastY = 0;
   var undoStack = [], redoStack = [];
 
+  // shared so the live board uses the same color / size / brush
+  window.getDrawStyle = function () { return { color: tool === "eraser" ? "#ffffff" : color, size: brush, opacity: opacity, tool: tool }; };
+
   function setupCanvas(keep) {
     canvas = $("#doodleCanvas");
     if (!canvas) return;
