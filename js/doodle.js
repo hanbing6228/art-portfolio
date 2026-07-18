@@ -88,9 +88,9 @@
         link.download = "my-doodle.png";
         link.href = canvas.toDataURL("image/png");
         link.click();
-        toast("Saved your doodle! 💾");
+        toast("Saved your doodle!");
       } catch (e) {
-        toast("Couldn't save 😢");
+        toast("Couldn't save");
       }
     });
   }

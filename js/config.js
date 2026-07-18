@@ -31,10 +31,10 @@ window.CONFIG = {
 
   // Fun facts shown as little chips on the About page
   funFacts: [
-    "🖌️ 5 kinds of art",
-    "📚 Manga lover",
-    "🌱 Favorite color: green",
-    "✏️ Always drawing",
+    "5 kinds of art",
+    "Manga lover",
+    "Favorite color: green",
+    "Always drawing",
   ],
 
   // --- Your social links (leave "" to hide a button) ---

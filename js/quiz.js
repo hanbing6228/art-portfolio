@@ -56,10 +56,10 @@
     opts[item.correct].classList.add("correct");
     if (i === item.correct) {
       score++;
-      toast("Correct! 🎉");
+      toast("Correct!");
     } else {
       btn.classList.add("wrong");
-      toast("Oops! 💚");
+      toast("Oops!");
     }
     opts.forEach((o) => (o.disabled = true));
     setTimeout(() => { idx++; render(); }, 900);
@@ -68,17 +68,17 @@
   function renderResult() {
     const area = $("#quizArea");
     const total = QUESTIONS.length;
-    let msg = "Nice try! 🌱";
-    if (score === total) msg = "Perfect score! You know me so well! 🏆";
-    else if (score >= total - 1) msg = "Almost perfect! 🌟";
-    else if (score >= total / 2) msg = "Pretty good! 😄";
+    let msg = "Nice try!";
+    if (score === total) msg = "Perfect score! You know me so well!";
+    else if (score >= total - 1) msg = "Almost perfect!";
+    else if (score >= total / 2) msg = "Pretty good!";
     area.innerHTML = `
       <div class="card quiz-result">
         <div class="quiz-score">${score}/${total}</div>
         <p>${msg}</p>
         <div class="doodle-tools" style="justify-content:center">
-          <button class="tool-chip" id="quizRetry">🔁 Try again</button>
-          <button class="tool-chip primary" id="quizShare">📤 Share result</button>
+          <button class="tool-chip" id="quizRetry">${icon("retry")} Try again</button>
+          <button class="tool-chip primary" id="quizShare">${icon("share")} Share result</button>
         </div>
       </div>`;
     $("#quizRetry").addEventListener("click", () => { idx = 0; score = 0; render(); });

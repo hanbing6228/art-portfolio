@@ -36,7 +36,7 @@
     // fallback: copy link
     try {
       await navigator.clipboard.writeText(url);
-      toast("Link copied! 📋");
+      toast("Link copied!");
     } catch (e) {
       toast("Copy this link: " + url);
     }
@@ -60,23 +60,35 @@
     $("#heroName").textContent = cfg.name || "My Name";
     $("#heroTagline").textContent = cfg.tagline || "";
     $("#avatarImg").src = cfg.avatar || "assets/img/avatar.svg";
-    if (cfg.age) $("#ageBadge").textContent = "🎂 Age " + cfg.age;
     if (cfg.obsession) {
       $("#obsessionTitle").textContent = cfg.obsession.title || "";
       $("#obsessionNote").textContent = cfg.obsession.note || "";
     }
 
+    // badges on home
+    const badges = $("#badges");
+    if (badges) {
+      const list = [
+        { icon: "cake", label: "Age " + (cfg.age || 12) },
+        { icon: "book", label: "Manga Lover" },
+        { icon: "leaf", label: "Green Fan" },
+      ];
+      badges.innerHTML = list
+        .map((b) => `<span class="badge">${icon(b.icon)} ${b.label}</span>`)
+        .join("");
+    }
+
     // quick links on home
     const ql = $("#quickLinks");
     const links = [
-      { label: "🖼️ See my work", target: "gallery" },
-      { label: "🖍️ Try the doodle pad", target: "doodle" },
-      { label: "🧩 Take my quiz", target: "quiz" },
+      { icon: "gallery", label: "See my work", target: "gallery" },
+      { icon: "brush", label: "Try the doodle pad", target: "doodle" },
+      { icon: "quiz", label: "Take my quiz", target: "quiz" },
     ];
     links.forEach((l) => {
       const b = document.createElement("button");
       b.className = "tool-chip";
-      b.textContent = l.label;
+      b.innerHTML = icon(l.icon) + " " + l.label;
       b.addEventListener("click", () => goTo(l.target));
       ql.appendChild(b);
     });
@@ -113,7 +125,7 @@
     });
   }
   function updateThemeIcon(theme) {
-    $("#themeToggle").textContent = theme === "dark" ? "☀️" : "🌙";
+    $("#themeToggle").innerHTML = icon(theme === "dark" ? "sun" : "moon");
   }
 
   /* ---------- Sparkle burst on avatar tap ---------- */
@@ -123,9 +135,9 @@
     wrap.addEventListener("click", () => {
       for (let i = 0; i < 8; i++) {
         const s = document.createElement("span");
-        s.textContent = "✦";
         s.style.cssText =
-          "position:absolute;left:50%;top:50%;pointer-events:none;color:var(--gold);font-size:1.2rem;z-index:5;";
+          "position:absolute;left:50%;top:50%;pointer-events:none;width:12px;height:12px;background:var(--accent);z-index:5;" +
+          "clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);";
         wrap.appendChild(s);
         const ang = (Math.PI * 2 * i) / 8;
         const dist = 70 + i * 4;
@@ -165,6 +177,7 @@
 
   /* ---------- boot ---------- */
   document.addEventListener("DOMContentLoaded", function () {
+    if (window.renderIcons) renderIcons(document);
     fillContent();
     initTheme();
     initSparkles();

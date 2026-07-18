@@ -21,6 +21,14 @@ and installable as a phone app (PWA).
 All likes / guestbook messages are saved in your browser on your device
 (no accounts, no server — private and safe).
 
+## 🎨 Look & feel
+
+- **Palette:** soft sage green `#60925e`, teal `#2f5d55`, tan `#cfaf92`, cream, on a pale-sage
+  background — with bright cyan `#c8f5f9` used only as small sparkle/accent touches.
+- **Icons:** all icons are custom hand-drawn **SVGs** (no emoji), defined in `js/icons.js`. To change
+  or add one, edit that file; reference it in markup as `<span class="ic" data-icon="name"></span>`
+  or in JS with `icon("name")`.
+
 ## 🚀 Run it
 
 It's just static files. Any of these works:

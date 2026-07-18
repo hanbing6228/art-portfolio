@@ -1,30 +1,36 @@
-/* ===== Green webtoon theme ===== */
+/* ===== Soft sage / teal theme ===== */
 :root {
-  --bg1: #eef6df;
-  --bg2: #cfe7ac;
-  --deep: #2f5233;
-  --mid: #5a8f4e;
-  --light: #a8d08d;
-  --cream: #f6f9ec;
-  --card: #ffffff;
-  --ink: #243a1e;
-  --muted: #5f7a56;
-  --gold: #f3c969;
-  --accent: #7cb342;
-  --shadow: 0 8px 22px rgba(47, 82, 51, 0.16);
+  --bg1: #dbe6cf;
+  --bg2: #c2d4bb;
+  --deep: #2f5d55;   /* teal linework / headings */
+  --mid: #60925e;    /* sage green primary */
+  --light: #a9c6a0;
+  --tan: #cfaf92;
+  --cream: #f2efe0;
+  --card: #f4f2e6;
+  --ink: #2c3f2a;
+  --muted: #6b7f63;
+  --gold: #cfaf92;   /* legacy alias -> tan */
+  --accent: #c8f5f9; /* bright cyan, small accents only */
+  --blush: #d9b3b3;
+  --shadow: 0 8px 22px rgba(47, 93, 85, 0.15);
   --radius: 20px;
   --nav-h: 66px;
 }
 :root[data-theme="dark"] {
-  --bg1: #17251a;
-  --bg2: #223528;
-  --deep: #bfe6a8;
-  --mid: #7cb342;
-  --light: #3a5a3c;
-  --cream: #1e2f22;
-  --card: #223528;
-  --ink: #e8f3d6;
-  --muted: #9fc290;
+  --bg1: #1c2b28;
+  --bg2: #253833;
+  --deep: #bfe0d4;
+  --mid: #7bb277;
+  --light: #3c574f;
+  --tan: #b79b7f;
+  --cream: #223330;
+  --card: #253833;
+  --ink: #e6efe0;
+  --muted: #9db69a;
+  --gold: #b79b7f;
+  --accent: #8fd6db;
+  --blush: #c99c9c;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -36,6 +42,12 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+/* ===== Icon system ===== */
+.ic { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.18em; }
+.ic-svg { width: 1.25em; height: 1.25em; display: block; }
+.ic.ic-sm .ic-svg { width: 1em; height: 1em; }
+.tool-chip .ic-svg, .filter-btn .ic-svg { width: 1.15em; height: 1.15em; }
 
 /* halftone dot background */
 .bg-halftone {
@@ -87,12 +99,13 @@ body {
   border: 5px solid #fff; box-shadow: var(--shadow); object-fit: cover;
   background: var(--cream); cursor: pointer;
 }
-.sparkle { position: absolute; color: var(--gold); font-size: 1.4rem;
-           animation: twinkle 1.8s ease-in-out infinite; }
-.sparkle.s1 { top: 4px; left: -6px; }
-.sparkle.s2 { bottom: 12px; right: -8px; animation-delay: .5s; }
-.sparkle.s3 { top: 30px; right: 6px; font-size: 1rem; animation-delay: 1s; }
-@keyframes twinkle { 0%,100% { transform: scale(1); opacity: .7;} 50% { transform: scale(1.5); opacity: 1;} }
+.deco-sparkle { position: absolute; width: 14px; height: 14px;
+  background: var(--accent); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  animation: twinkle 1.8s ease-in-out infinite; }
+.deco-sparkle.s1 { top: 2px; left: -8px; }
+.deco-sparkle.s2 { bottom: 10px; right: -10px; animation-delay: .5s; }
+.deco-sparkle.s3 { top: 28px; right: 4px; width: 10px; height: 10px; animation-delay: 1s; }
+@keyframes twinkle { 0%,100% { transform: scale(1) rotate(0); opacity: .6;} 50% { transform: scale(1.4) rotate(20deg); opacity: 1;} }
 .hero-name { font-size: 1.9rem; margin: 14px 0 2px; color: var(--deep); }
 .hero-tagline { margin: 0; color: var(--muted); font-size: 1.05rem; }
 .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
@@ -117,7 +130,7 @@ body {
   padding: 8px 14px; border-radius: 999px; font-size: 0.9rem; font-weight: bold; cursor: pointer;
   white-space: nowrap; transition: all .2s;
 }
-.filter-btn.active { background: var(--mid); color: #fff; border-color: var(--mid); }
+.filter-btn.active { background: var(--light); color: var(--deep); border-color: var(--mid); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .art-card {

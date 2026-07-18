@@ -10,7 +10,7 @@
     if (!list) return;
     const messages = getMessages();
     if (!messages.length) {
-      list.innerHTML = '<p class="gb-empty">No messages yet — be the first! 🌱</p>';
+      list.innerHTML = '<p class="gb-empty">No messages yet — be the first!</p>';
       return;
     }
     list.innerHTML = messages
@@ -33,7 +33,7 @@
   function add() {
     const name = $("#gbName").value.trim() || "Anonymous";
     const msg = $("#gbMsg").value.trim();
-    if (!msg) { toast("Write a message first ✍️"); return; }
+    if (!msg) { toast("Write a message first"); return; }
     const messages = getMessages();
     const date = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
     messages.unshift({ name, msg, date });
@@ -41,7 +41,7 @@
     $("#gbName").value = "";
     $("#gbMsg").value = "";
     render();
-    toast("Thanks for your message! 💚");
+    toast("Thanks for your message!");
   }
 
   document.addEventListener("DOMContentLoaded", function () {

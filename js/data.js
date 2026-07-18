@@ -9,12 +9,12 @@
    ============================================================= */
 
 window.CATEGORIES = [
-  { id: "all",         name: "All",         emoji: "✨" },
-  { id: "printmaking", name: "Printmaking", emoji: "🟩" },
-  { id: "sketch",      name: "Sketch",      emoji: "✏️" },
-  { id: "watercolor",  name: "Watercolor",  emoji: "🎨" },
-  { id: "clay",        name: "Clay",        emoji: "🏺" },
-  { id: "weaving",     name: "Weaving",     emoji: "🧶" },
+  { id: "all",         name: "All",         icon: "cat-all" },
+  { id: "printmaking", name: "Printmaking", icon: "cat-printmaking" },
+  { id: "sketch",      name: "Sketch",      icon: "cat-sketch" },
+  { id: "watercolor",  name: "Watercolor",  icon: "cat-watercolor" },
+  { id: "clay",        name: "Clay",        icon: "cat-clay" },
+  { id: "weaving",     name: "Weaving",     icon: "cat-weaving" },
 ];
 
 window.ARTWORKS = [

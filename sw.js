@@ -1,5 +1,5 @@
 /* Minimal service worker: offline-capable, cache-first for app shell. */
-const CACHE = "art-portfolio-v1";
+const CACHE = "art-portfolio-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./css/styles.css",
   "./js/config.js",
   "./js/data.js",
+  "./js/icons.js",
   "./js/app.js",
   "./js/gallery.js",
   "./js/doodle.js",

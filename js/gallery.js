@@ -24,7 +24,7 @@
     (window.CATEGORIES || []).forEach((cat) => {
       const b = document.createElement("button");
       b.className = "filter-btn" + (cat.id === currentFilter ? " active" : "");
-      b.textContent = cat.emoji + " " + cat.name;
+      b.innerHTML = icon(cat.icon) + " " + cat.name;
       b.addEventListener("click", () => {
         currentFilter = cat.id;
         renderFilters();
@@ -56,9 +56,9 @@
           <div class="art-title">${art.title}</div>
           <div class="art-actions">
             <button class="like-btn ${isLiked(art.id) ? "liked" : ""}" data-id="${art.id}">
-              ${isLiked(art.id) ? "❤️" : "🤍"} <span>${likeCount(art)}</span>
+              ${icon(isLiked(art.id) ? "heart-filled" : "heart")} <span>${likeCount(art)}</span>
             </button>
-            <button class="mini-btn share-one" data-id="${art.id}">📤</button>
+            <button class="mini-btn share-one" data-id="${art.id}">${icon("share")}</button>
           </div>
         </div>`;
       // open lightbox when tapping the image/title
@@ -70,8 +70,8 @@
         const liked = toggleLike(art.id);
         const btn = e.currentTarget;
         btn.classList.toggle("liked", liked);
-        btn.innerHTML = `${liked ? "❤️" : "🤍"} <span>${likeCount(art)}</span>`;
-        if (liked) toast("Thanks for the love! 💚");
+        btn.innerHTML = `${icon(liked ? "heart-filled" : "heart")} <span>${likeCount(art)}</span>`;
+        if (liked) toast("Thanks for the love!");
       });
       // share
       card.querySelector(".share-one").addEventListener("click", (e) => {
@@ -97,7 +97,7 @@
   function updateLightboxLike() {
     if (!lightboxArt) return;
     const liked = isLiked(lightboxArt.id);
-    $("#lightboxLike").firstChild.textContent = liked ? "❤️ " : "🤍 ";
+    $("#lightboxLikeIcon").innerHTML = ICONS[liked ? "heart-filled" : "heart"] || "";
     $("#lightboxLikeCount").textContent = likeCount(lightboxArt);
     $("#lightboxLike").classList.toggle("liked", liked);
   }
@@ -111,7 +111,7 @@
       if (!lightboxArt) return;
       const liked = toggleLike(lightboxArt.id);
       updateLightboxLike();
-      if (liked) toast("Thanks for the love! 💚");
+      if (liked) toast("Thanks for the love!");
       renderGrid(); // keep grid counts in sync
     });
     $("#lightboxShare").addEventListener("click", () => {
