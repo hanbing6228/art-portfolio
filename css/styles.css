@@ -116,12 +116,33 @@ body {
 .home-cover[hidden] { display: none; }
 .home-cover img { width: 100%; max-height: 210px; object-fit: cover; display: block; background: var(--cream); }
 
-/* background music widget */
+/* left-side floating stack: music on top, chat below */
 .music-widget {
-  position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;
+  position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + 60px + env(safe-area-inset-bottom)); z-index: 45;
   display: flex; align-items: center; gap: 2px; background: var(--card); border: 2px solid var(--light);
   border-radius: 999px; padding: 4px; box-shadow: var(--shadow);
 }
+.chat-fab {
+  position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;
+  width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--card); border: 2px solid var(--light); box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+}
+.chat-fab .ic-svg { width: 1.7rem; height: 1.7rem; }
+.chat-drawer {
+  position: fixed; inset: 0; z-index: 85; background: rgba(20,35,30,0.55); backdrop-filter: blur(2px);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.chat-drawer[hidden] { display: none; }
+.chat-drawer-panel {
+  background: var(--bg1); width: 100%; max-width: 620px; border-radius: 22px 22px 0 0;
+  max-height: 80vh; display: flex; flex-direction: column; box-shadow: var(--shadow); animation: sheetUp .25s ease;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@keyframes sheetUp { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+.chat-drawer-panel .admin-head { border-radius: 22px 22px 0 0; }
+.chat-drawer-panel #chatDrawerList { flex: 1; min-height: 160px; margin: 0; padding: 12px 16px; }
+.chat-drawer-panel .guestbook-form { padding: 0 16px 14px; }
 .music-widget[hidden] { display: none; }
 .mus-btn { border: none; background: transparent; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
 .mus-btn .ic-svg { width: 1.3rem; height: 1.3rem; }
@@ -145,8 +166,8 @@ body {
   display: flex; align-items: center; justify-content: center; padding: 18px;
 }
 .fave-viewer[hidden] { display: none; }
-.fave-viewer-inner { position: relative; max-width: 560px; width: 100%; text-align: center; }
-.fave-viewer-inner img { max-width: 100%; max-height: 74vh; border-radius: 14px; background: var(--cream); }
+.fave-viewer-inner { position: relative; max-width: 96vw; width: 100%; text-align: center; }
+.fave-viewer-inner img { max-width: 100%; max-height: 84vh; object-fit: contain; border-radius: 14px; background: var(--cream); }
 .fave-viewer-inner h3 { color: #fff; margin: 12px 0 8px; }
 .fave-viewer-inner .lightbox-actions { justify-content: center; }
 .fave-viewer .lightbox-close { top: -4px; right: -4px; }
@@ -257,7 +278,12 @@ body {
 .like-btn.liked { color: #e5484d; }
 
 /* ===== Doodle ===== */
-.doodle-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.doodle-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+
+/* pro-looking range sliders (doodle size/opacity, etc.) */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: var(--light); outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--mid); border: 3px solid #fff; box-shadow: var(--shadow); cursor: pointer; margin-top: 0; }
+input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--mid); border: 3px solid #fff; cursor: pointer; }
 .tool-chip {
   border: 2px solid var(--light); background: var(--card); color: var(--deep);
   padding: 8px 12px; border-radius: 999px; font-size: 0.88rem; font-weight: bold; cursor: pointer;
@@ -266,10 +292,12 @@ body {
 .tool-chip.primary { background: var(--mid); color: #fff; border-color: var(--mid); }
 .tool-chip input[type=range] { width: 80px; }
 .color-dot {
-  width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff;
-  box-shadow: var(--shadow); cursor: pointer;
+  width: 28px; height: 28px; border-radius: 50%; border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(47,93,85,0.18); cursor: pointer; transition: transform .1s;
 }
-.color-dot.active { outline: 3px solid var(--deep); }
+.color-dot:active { transform: scale(1.15); }
+.color-dot.active { outline: 3px solid var(--deep); outline-offset: 1px; }
+#doodleColors { background: rgba(96,146,94,0.08); border-radius: 14px; padding: 10px; gap: 7px; }
 .color-input-wrap { display: inline-flex; align-items: center; }
 #colorPicker { width: 40px; height: 40px; border: 2px solid var(--light); border-radius: 50%; padding: 0; background: none; cursor: pointer; }
 #colorPicker::-webkit-color-swatch-wrapper { padding: 3px; }
@@ -364,16 +392,16 @@ body {
 
 /* ===== Lightbox ===== */
 .lightbox {
-  position: fixed; inset: 0; z-index: 50; background: rgba(20, 35, 20, 0.75);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+  position: fixed; inset: 0; z-index: 50; background: rgba(20, 35, 20, 0.85);
+  display: flex; align-items: center; justify-content: center; padding: 12px;
   backdrop-filter: blur(3px);
 }
 .lightbox[hidden] { display: none; }
 .lightbox-inner {
-  background: var(--card); border-radius: var(--radius); padding: 16px; max-width: 460px; width: 100%;
-  position: relative; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto;
+  background: var(--card); border-radius: var(--radius); padding: 12px; max-width: 96vw; width: 100%;
+  position: relative; box-shadow: var(--shadow); max-height: 94vh; overflow-y: auto;
 }
-.lightbox-inner img { width: 100%; border-radius: 14px; background: var(--cream); }
+.lightbox-inner img { width: 100%; max-height: 72vh; object-fit: contain; border-radius: 14px; background: var(--cream); }
 .lightbox-inner h3 { margin: 12px 0 4px; color: var(--deep); }
 .lightbox-inner p { margin: 0 0 12px; color: var(--muted); }
 .lightbox-close {
@@ -385,7 +413,7 @@ body {
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: calc(var(--nav-h) + 20px); left: 50%; transform: translateX(-50%);
-  background: var(--deep); color: #fff; padding: 10px 18px; border-radius: 999px; z-index: 60;
+  background: var(--deep); color: #fff; padding: 10px 18px; border-radius: 999px; z-index: 120;
   font-size: 0.9rem; box-shadow: var(--shadow); animation: pop 0.25s ease;
 }
 .toast[hidden] { display: none; }
@@ -504,7 +532,7 @@ body {
 
 /* ===== Badge unlock popup ===== */
 .achv-pop {
-  position: fixed; inset: 0; z-index: 70; background: rgba(20,35,30,0.72); backdrop-filter: blur(3px);
+  position: fixed; inset: 0; z-index: 100; background: rgba(20,35,30,0.72); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center; padding: 24px; animation: fade .25s ease;
 }
 .achv-pop-card {

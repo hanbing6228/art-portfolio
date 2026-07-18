@@ -5,13 +5,33 @@
    by tag. */
 (function () {
   var FAVES = [];
-  var isOwner = false;
+  var isOwner = false, onFaves = false;
   var currentTag = "all";
   var previewImg = null;
 
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
   function escAttr(s) { return String(s == null ? "" : s).replace(/"/g, "&quot;"); }
   function isImageUrl(u) { return /\.(jpe?g|png|gif|webp|avif|bmp)(\?|#|$)/i.test(u || ""); }
+  function updateFab() { if (fab) fab.hidden = !(isOwner && onFaves); }
+
+  // resize a picked image to a compressed data URL (fallback when a link has no preview)
+  function resizeToDataURL(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var cw = Math.max(1, Math.round(img.width * scale)), ch = Math.max(1, Math.round(img.height * scale));
+        var c = document.createElement("canvas"); c.width = cw; c.height = ch;
+        c.getContext("2d").drawImage(img, 0, 0, cw, ch);
+        var q = quality, out = c.toDataURL("image/jpeg", q);
+        while (out.length > 900000 && q > 0.4) { q -= 0.1; out = c.toDataURL("image/jpeg", q); }
+        resolve(out);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("bad image")); };
+      img.src = url;
+    });
+  }
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
 
   /* ---------- tag filter ---------- */
@@ -133,6 +153,10 @@
       '<label class="admin-label">Title<input id="favInTitle" class="gb-input" /></label>' +
       '<label class="admin-label">Note (optional)<input id="favInNote" class="gb-input" /></label>' +
       '<label class="admin-label">Tags (comma separated)<input id="favInTags" class="gb-input" placeholder="art, cute, blue" /></label>' +
+      '<details class="fav-more"><summary>No picture showed up? Upload one</summary>' +
+      '<label class="tool-chip" style="margin-top:8px">Upload an image<input id="favInFile" type="file" accept="image/*" hidden /></label>' +
+      '<p class="page-sub" style="font-size:0.75rem;margin:6px 0 0">Tip: on Pinterest, long-press the picture → “Copy image address”, then paste that here.</p>' +
+      "</details>" +
       '<button class="tool-chip primary" id="favInAdd">Add favorite</button>' +
       "</div></div></div>";
     document.body.appendChild(modal);
@@ -140,6 +164,12 @@
     document.getElementById("favModalClose").addEventListener("click", function () { modal.hidden = true; });
     document.getElementById("favInFetch").addEventListener("click", getPreview);
     document.getElementById("favInAdd").addEventListener("click", doAdd);
+    document.getElementById("favInFile").addEventListener("change", async function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      previewImg = await resizeToDataURL(f, 1000, 0.82);
+      var pv = document.getElementById("favInPrev"); pv.src = previewImg; pv.hidden = false;
+      toast("Image ready!");
+    });
   }
   function openModal() {
     buildModal();
@@ -200,13 +230,18 @@
     render();
     if (!(window.Cloud && Cloud.enabled)) return;
     buildFab();
+    onFaves = !!(document.getElementById("favorites") && document.getElementById("favorites").classList.contains("active"));
     Cloud.onAuth(function (user) {
       isOwner = !!user;
-      if (fab) fab.hidden = !isOwner;
+      updateFab();
       render();
       if (isOwner) handleShared();
     });
     reload();
-    document.addEventListener("pagechange", function (e) { if (e.detail === "favorites") reload(); });
+    document.addEventListener("pagechange", function (e) {
+      onFaves = e.detail === "favorites";
+      updateFab();
+      if (onFaves) reload();
+    });
   });
 })();
