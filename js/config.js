@@ -45,13 +45,20 @@ window.CONFIG = {
     email: "",       // e.g. "you@example.com"
   },
 
-  // --- Cloud sync (optional) ☁️ ---
-  // Fill these in to make the GUESTBOOK and LIKES shared by everyone and
+  // --- Cloud sync (optional) ☁️  — Firebase ---
+  // Fill in `firebase` to make the GUESTBOOK and LIKES shared by everyone and
   // never lost (see SETUP-CLOUD.md for the 5-minute setup).
-  // Leave them "" to keep everything on this device only (localStorage).
-  // Both values are SAFE to be public — do NOT paste any "service"/secret key here.
+  // Leave it null to keep everything on this device only (localStorage).
+  // The Firebase web config below is SAFE to be public (that's normal for
+  // Firebase) — it is protected by the security rules you set in the console.
   cloud: {
-    url: "",        // e.g. "https://xxxxxxxx.supabase.co"
-    anonKey: "",    // the Supabase "anon public" key
+    firebase: null,
+    // Example — paste your own config object from the Firebase console:
+    // firebase: {
+    //   apiKey: "AIza...",
+    //   authDomain: "your-app.firebaseapp.com",
+    //   projectId: "your-app",
+    //   appId: "1:1234567890:web:abcdef",
+    // },
   },
 };
