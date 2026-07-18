@@ -52,13 +52,14 @@ window.CONFIG = {
   // The Firebase web config below is SAFE to be public (that's normal for
   // Firebase) — it is protected by the security rules you set in the console.
   cloud: {
-    firebase: null,
-    // Example — paste your own config object from the Firebase console:
-    // firebase: {
-    //   apiKey: "AIza...",
-    //   authDomain: "your-app.firebaseapp.com",
-    //   projectId: "your-app",
-    //   appId: "1:1234567890:web:abcdef",
-    // },
+    firebase: {
+      apiKey: "AIzaSyAJMB8jgciqjMYYPwrwnbP7RqHJUR9fwpU",
+      authDomain: "linrose.firebaseapp.com",
+      projectId: "linrose",
+      storageBucket: "linrose.firebasestorage.app",
+      messagingSenderId: "328479503042",
+      appId: "1:328479503042:web:6686586182ba2f9f21015b",
+      measurementId: "G-Z046HZV7KB",
+    },
   },
 };
