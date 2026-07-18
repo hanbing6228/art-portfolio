@@ -187,6 +187,10 @@
       '<circle cx="12" cy="14" r="6" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
       '<path d="M12 11l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2L8.8 13.3 11 13Z" fill="' + C.cream + '" stroke="' + C.teal + '"/>'
     ),
+    gear: svg(
+      '<path d="M12 2.4l1.5 2.3 2.7-.7.3 2.8 2.7 1-1.2 2.5 1.8 2.1-2.4 1.5.4 2.8-2.8.2-1 2.6L12 21.6l-1.5-2.3-2.7.7-.3-2.8-2.7-1 1.2-2.5L2.2 11.6l2.4-1.5-.4-2.8 2.8-.2 1-2.6L12 2.4Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<circle cx="12" cy="12" r="3.3" fill="' + C.cream + '" stroke="' + C.teal + '"/>'
+    ),
   };
 
   window.ICONS = ICONS;

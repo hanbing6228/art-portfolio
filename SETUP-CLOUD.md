@@ -1,22 +1,22 @@
-# ☁️ Cloud setup — shared guestbook & likes (Firebase, free)
+# ☁️ Cloud setup — Firebase (guestbook, likes, and the Manage panel)
 
-By default the guestbook and likes are saved only on each visitor's own device.
-Follow these steps to make them **shared by everyone and never lost**, using
-**Firebase Firestore** (free "Spark" plan, no credit card). Ask a grown-up to help.
+Cloud powers three things: a **shared guestbook & likes**, and a **Manage panel**
+(the ⚙️ button) where the signed-in owner can upload an avatar, edit profile text,
+and add/delete artworks — from any phone, with no code editing.
 
-## 1. Create a Firebase project
-1. Go to **https://console.firebase.google.com** → **Add project**.
-2. Name it (e.g. `art-portfolio`) → you can turn Google Analytics **off** → Create.
+Everyone can **read**; only **you (signed in)** can change the profile/artworks.
 
-## 2. Create the database
-1. Left menu → **Build → Firestore Database** → **Create database**.
-2. Choose a location → start in **Production mode** → Enable.
-3. Open the **Rules** tab, replace everything with this, then **Publish**:
+Your project is already connected. If you set up a new one, repeat steps 1–3 from
+git history. Below are the parts needed for the **Manage panel**.
+
+## 1. Turn on the security rules
+Firebase console → **Firestore Database → Rules**, paste this, then **Publish**:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Guestbook: anyone can read and post a short message
     match /guestbook/{id} {
       allow read: if true;
@@ -27,37 +27,35 @@ service cloud.firestore {
                     && request.resource.data.name.size() < 40;
       allow update, delete: if false;
     }
+
     // Likes: anyone can read and change the counts
     match /likes/{artId} {
       allow read, write: if true;
     }
+
+    // Profile & artworks: anyone can READ, only the signed-in owner can WRITE
+    match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
+    match /artworks/{artId} { allow read: if true; allow write: if request.auth != null; }
   }
 }
 ```
 
-## 3. Get your web config
-1. Project **Overview** (top-left) → click the **`</>`** (Web) icon to add a web app.
-2. Give it a nickname → **Register app** (you can skip Hosting).
-3. It shows a `const firebaseConfig = { ... }` object. Copy that object.
+## 2. Turn on owner login
+1. Firebase console → **Build → Authentication → Get started**.
+2. **Sign-in method** tab → enable **Email/Password** → Save.
+3. **Users** tab → **Add user** → enter your email + a password → Add user.
+   (This is YOUR login for the ⚙️ Manage panel — keep it private.)
 
-## 4. Paste it into the site
-Open `js/config.js` and set `cloud.firebase` to your object:
+## 3. Use it
+On the site, tap the **⚙️ gear** (top-right) → **Sign in** with the email/password
+from step 2. Then you can:
+- **Profile:** change your name, tagline, "obsessed with", About text, fun facts,
+  and upload an **avatar photo**.
+- **Add artwork:** choose a photo, add a title, description, tags, and shape.
+- **My artworks:** delete any you uploaded.
 
-```js
-cloud: {
-  firebase: {
-    apiKey: "AIza...",
-    authDomain: "art-portfolio-xxxx.firebaseapp.com",
-    projectId: "art-portfolio-xxxx",
-    appId: "1:1234567890:web:abcdef",
-  },
-},
-```
+Everything saves to the cloud and appears for all visitors right away. Photos are
+automatically shrunk in the browser before uploading, so they stay small.
 
-Save → commit → push. Your site redeploys, and the guestbook and likes are now
-shared by everyone, on every device. 🎉
-
-> The Firebase web config is **meant to be public** — it only identifies your
-> project. Your data is protected by the security **rules** in step 2.
-
-To turn cloud off again, set `firebase: null`.
+> Tap the gear again any time to manage more. Tap **Sign out** when done.
+> The gear only writes when you're signed in — visitors can't change anything.

@@ -55,15 +55,33 @@
     btn.addEventListener("click", () => goTo(btn.dataset.target));
   });
 
-  /* ---------- Hero / About content from config ---------- */
+  /* ---------- Profile (from config, overridable by cloud) ---------- */
+  // A profile object may come from the cloud (owner-edited). Any missing field
+  // falls back to CONFIG in js/config.js.
+  window.applyProfile = function (p) {
+    p = p || {};
+    var obs = cfg.obsession || {};
+    $("#heroName").textContent = p.name || cfg.name || "My Name";
+    $("#heroTagline").textContent = p.tagline != null ? p.tagline : (cfg.tagline || "");
+    $("#avatarImg").src = p.avatar || cfg.avatar || "assets/img/avatar.svg";
+    $("#obsessionTitle").textContent = p.obsessionTitle != null ? p.obsessionTitle : (obs.title || "");
+    $("#obsessionNote").textContent = p.obsessionNote != null ? p.obsessionNote : (obs.note || "");
+
+    var about = $("#aboutText");
+    about.innerHTML = "";
+    (p.about && p.about.length ? p.about : (cfg.about || [])).forEach(function (para) {
+      var el = document.createElement("p"); el.textContent = para; about.appendChild(el);
+    });
+    var ff = $("#funFacts");
+    ff.innerHTML = "";
+    (p.funFacts && p.funFacts.length ? p.funFacts : (cfg.funFacts || [])).forEach(function (f) {
+      var s = document.createElement("span"); s.className = "chip"; s.textContent = f; ff.appendChild(s);
+    });
+  };
+
+  /* ---------- Hero / About content ---------- */
   function fillContent() {
-    $("#heroName").textContent = cfg.name || "My Name";
-    $("#heroTagline").textContent = cfg.tagline || "";
-    $("#avatarImg").src = cfg.avatar || "assets/img/avatar.svg";
-    if (cfg.obsession) {
-      $("#obsessionTitle").textContent = cfg.obsession.title || "";
-      $("#obsessionNote").textContent = cfg.obsession.note || "";
-    }
+    applyProfile(null);
 
     // badges on home
     const badges = $("#badges");
@@ -93,22 +111,12 @@
       ql.appendChild(b);
     });
 
-    // about
-    const about = $("#aboutText");
-    (cfg.about || []).forEach((para) => {
-      const p = document.createElement("p");
-      p.textContent = para;
-      about.appendChild(p);
-    });
-    const ff = $("#funFacts");
-    (cfg.funFacts || []).forEach((f) => {
-      const s = document.createElement("span");
-      s.className = "chip";
-      s.textContent = f;
-      ff.appendChild(s);
-    });
-
     $("#year").textContent = new Date().getFullYear();
+
+    // if cloud has an owner-edited profile, apply it over the defaults
+    if (window.Cloud && Cloud.enabled) {
+      Cloud.getProfile().then(function (prof) { if (prof) applyProfile(prof); });
+    }
   }
 
   /* ---------- Theme toggle ---------- */

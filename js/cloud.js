@@ -1,93 +1,134 @@
 /* =============================================================
-   Cloud sync (optional)  ☁️  — Firebase Firestore
-   If you fill in CONFIG.cloud.firebase (see SETUP-CLOUD.md), the guestbook
-   and likes are stored in the cloud and SHARED by everyone, on every device,
-   and never lost.
-
-   If it's empty, the site quietly falls back to this-browser storage
-   (localStorage) — everything still works, just not shared.
+   Cloud sync (optional)  ☁️  — Firebase Firestore + Auth
+   When CONFIG.cloud.firebase is set, this powers:
+     - shared guestbook & likes (everyone)
+     - owner-editable profile & artworks (only the signed-in owner can write;
+       everyone can read). Images are stored as compressed data URLs in
+       Firestore, so no paid Storage bucket is needed.
+   Falls back to localStorage / config defaults when not configured.
    ============================================================= */
 (function () {
   var cfg = (window.CONFIG && window.CONFIG.cloud) || {};
   var fb = cfg.firebase || null;
   var configured = !!(fb && fb.projectId && fb.apiKey);
 
-  var db = null;
-  var F = null; // firestore function refs
+  var db = null, auth = null, F = null, A = null;
   var resolveReady;
   var readyPromise = new Promise(function (r) { resolveReady = r; });
+
+  function ok() { return readyPromise; }
 
   window.Cloud = {
     enabled: configured,
     ready: readyPromise,
 
+    /* ---------- guestbook ---------- */
     async listGuestbook() {
-      var ok = await readyPromise;
-      if (!ok || !db) return null;
+      if (!(await ok()) || !db) return null;
       try {
         var q = F.query(F.collection(db, "guestbook"), F.orderBy("created", "desc"), F.limit(200));
         var snap = await F.getDocs(q);
-        return snap.docs.map(function (d) {
-          var x = d.data();
-          return { name: x.name, message: x.message, created_at: x.created && x.created.toMillis ? x.created.toMillis() : Date.now() };
-        });
+        return snap.docs.map(function (d) { var x = d.data(); return { name: x.name, message: x.message, created_at: x.created && x.created.toMillis ? x.created.toMillis() : Date.now() }; });
       } catch (e) { console.warn("[cloud] guestbook load:", e.message || e); return null; }
     },
     async addGuestbook(name, message) {
-      var ok = await readyPromise;
-      if (!ok || !db) return false;
-      try {
-        await F.addDoc(F.collection(db, "guestbook"), { name: name, message: message, created: F.serverTimestamp() });
-        return true;
-      } catch (e) { console.warn("[cloud] guestbook add:", e.message || e); return false; }
+      if (!(await ok()) || !db) return false;
+      try { await F.addDoc(F.collection(db, "guestbook"), { name: name, message: message, created: F.serverTimestamp() }); return true; }
+      catch (e) { console.warn("[cloud] guestbook add:", e.message || e); return false; }
     },
+
+    /* ---------- likes ---------- */
     async getLikeCounts() {
-      var ok = await readyPromise;
-      if (!ok || !db) return null;
-      try {
-        var snap = await F.getDocs(F.collection(db, "likes"));
-        var m = {};
-        snap.forEach(function (d) { m[d.id] = Math.max(0, (d.data().count) || 0); });
-        return m;
-      } catch (e) { console.warn("[cloud] likes load:", e.message || e); return null; }
+      if (!(await ok()) || !db) return null;
+      try { var snap = await F.getDocs(F.collection(db, "likes")); var m = {}; snap.forEach(function (d) { m[d.id] = Math.max(0, (d.data().count) || 0); }); return m; }
+      catch (e) { console.warn("[cloud] likes load:", e.message || e); return null; }
     },
     async like(artId) { await bumpLike(artId, 1); },
     async unlike(artId) { await bumpLike(artId, -1); },
+
+    /* ---------- profile (owner writes) ---------- */
+    async getProfile() {
+      if (!(await ok()) || !db) return null;
+      try { var d = await F.getDoc(F.doc(db, "profile", "main")); return d.exists() ? d.data() : null; }
+      catch (e) { console.warn("[cloud] profile load:", e.message || e); return null; }
+    },
+    async saveProfile(obj) {
+      if (!(await ok()) || !db) return false;
+      try { await F.setDoc(F.doc(db, "profile", "main"), obj, { merge: true }); return true; }
+      catch (e) { console.warn("[cloud] profile save:", e.message || e); return false; }
+    },
+
+    /* ---------- artworks (owner writes) ---------- */
+    async listArtworks() {
+      if (!(await ok()) || !db) return null;
+      try {
+        var q = F.query(F.collection(db, "artworks"), F.orderBy("created", "desc"));
+        var snap = await F.getDocs(q);
+        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, title: x.title, desc: x.desc, img: x.img, tags: x.tags || [], aspect: x.aspect || "square" }; });
+      } catch (e) { console.warn("[cloud] artworks load:", e.message || e); return null; }
+    },
+    async addArtwork(obj) {
+      if (!(await ok()) || !db) return false;
+      try { var ref = await F.addDoc(F.collection(db, "artworks"), Object.assign({}, obj, { created: F.serverTimestamp() })); return ref.id; }
+      catch (e) { console.warn("[cloud] artwork add:", e.message || e); return false; }
+    },
+    async updateArtwork(id, obj) {
+      if (!(await ok()) || !db) return false;
+      try { await F.setDoc(F.doc(db, "artworks", id), obj, { merge: true }); return true; }
+      catch (e) { console.warn("[cloud] artwork update:", e.message || e); return false; }
+    },
+    async deleteArtwork(id) {
+      if (!(await ok()) || !db) return false;
+      try { await F.deleteDoc(F.doc(db, "artworks", id)); return true; }
+      catch (e) { console.warn("[cloud] artwork delete:", e.message || e); return false; }
+    },
+
+    /* ---------- auth (owner) ---------- */
+    async signIn(email, password) {
+      if (!(await ok()) || !auth) return { ok: false, error: "Cloud not ready" };
+      try { await A.signInWithEmailAndPassword(auth, email, password); return { ok: true }; }
+      catch (e) { return { ok: false, error: (e && e.code) || (e && e.message) || "sign-in failed" }; }
+    },
+    async signOutOwner() { if (auth) try { await A.signOut(auth); } catch (e) {} },
+    onAuth(cb) { readyPromise.then(function (r) { if (r && auth) A.onAuthStateChanged(auth, cb); else cb(null); }); },
+    isOwner() { return !!(auth && auth.currentUser); },
   };
 
   async function bumpLike(artId, by) {
-    var ok = await readyPromise;
-    if (!ok || !db) return;
-    try {
-      await F.setDoc(F.doc(db, "likes", artId), { count: F.increment(by) }, { merge: true });
-    } catch (e) { console.warn("[cloud] like:", e.message || e); }
+    if (!(await ok()) || !db) return;
+    try { await F.setDoc(F.doc(db, "likes", artId), { count: F.increment(by) }, { merge: true }); }
+    catch (e) { console.warn("[cloud] like:", e.message || e); }
   }
 
   if (!configured) { resolveReady(false); return; }
 
-  // Load Firebase (modular) on demand, only when configured
   var V = "https://www.gstatic.com/firebasejs/10.12.0/";
-  Promise.all([import(V + "firebase-app.js"), import(V + "firebase-firestore.js")])
-    .then(function (mods) {
-      try {
-        var app = mods[0].initializeApp(fb);
-        var fs = mods[1];
-        db = fs.getFirestore(app);
-        F = {
-          collection: fs.collection, doc: fs.doc, addDoc: fs.addDoc, getDocs: fs.getDocs,
-          setDoc: fs.setDoc, query: fs.query, orderBy: fs.orderBy, limit: fs.limit,
-          serverTimestamp: fs.serverTimestamp, increment: fs.increment,
-        };
-        resolveReady(true);
-      } catch (e) {
-        console.warn("[cloud] init failed:", e);
-        window.Cloud.enabled = false;
-        resolveReady(false);
-      }
-    })
-    .catch(function () {
-      console.warn("[cloud] could not load Firebase — using local storage.");
-      window.Cloud.enabled = false;
-      resolveReady(false);
-    });
+  Promise.all([
+    import(V + "firebase-app.js"),
+    import(V + "firebase-firestore.js"),
+    import(V + "firebase-auth.js"),
+  ]).then(function (mods) {
+    try {
+      var app = mods[0].initializeApp(fb);
+      var fs = mods[1], au = mods[2];
+      db = fs.getFirestore(app);
+      auth = au.getAuth(app);
+      F = {
+        collection: fs.collection, doc: fs.doc, addDoc: fs.addDoc, getDoc: fs.getDoc, getDocs: fs.getDocs,
+        setDoc: fs.setDoc, deleteDoc: fs.deleteDoc, query: fs.query, orderBy: fs.orderBy, limit: fs.limit,
+        serverTimestamp: fs.serverTimestamp, increment: fs.increment,
+      };
+      A = {
+        signInWithEmailAndPassword: au.signInWithEmailAndPassword, signOut: au.signOut,
+        onAuthStateChanged: au.onAuthStateChanged,
+      };
+      resolveReady(true);
+    } catch (e) {
+      console.warn("[cloud] init failed:", e);
+      window.Cloud.enabled = false; resolveReady(false);
+    }
+  }).catch(function () {
+    console.warn("[cloud] could not load Firebase — using local storage.");
+    window.Cloud.enabled = false; resolveReady(false);
+  });
 })();

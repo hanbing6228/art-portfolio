@@ -24,11 +24,14 @@
   }
 
   var currentTag = "all";
+  var ARTWORKS_SRC = null; // set from cloud when the owner has added artworks
+
+  function artworks() { return ARTWORKS_SRC || window.ARTWORKS || []; }
 
   // Collect all tags used across artworks, most-common first.
   function allTags() {
     var counts = {};
-    (window.ARTWORKS || []).forEach(function (a) {
+    artworks().forEach(function (a) {
       (a.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
     });
     return Object.keys(counts).sort(function (a, b) {
@@ -54,7 +57,7 @@
   }
 
   function visibleArtworks() {
-    var all = window.ARTWORKS || [];
+    var all = artworks();
     if (currentTag === "all") return all;
     return all.filter(function (a) { return (a.tags || []).indexOf(currentTag) !== -1; });
   }
@@ -178,14 +181,24 @@
     });
   }
 
+  // Let the admin panel refresh the wall after adding/editing/deleting works.
+  window.reloadGallery = function (list) {
+    if (list) ARTWORKS_SRC = list;
+    currentTag = "all";
+    renderFilters();
+    renderGrid();
+  };
+
   document.addEventListener("DOMContentLoaded", function () {
     renderFilters();
     renderGrid();
     initLightbox();
-    // if cloud is on, load shared like counts and refresh the numbers
     if (window.Cloud && Cloud.enabled) {
-      Cloud.getLikeCounts().then(function (m) {
-        if (m) { cloudCounts = m; renderGrid(); }
+      // shared like counts
+      Cloud.getLikeCounts().then(function (m) { if (m) { cloudCounts = m; renderGrid(); } });
+      // owner-uploaded artworks replace the placeholders (only if any exist)
+      Cloud.listArtworks().then(function (list) {
+        if (list && list.length) { ARTWORKS_SRC = list; renderFilters(); renderGrid(); }
       });
     }
   });
