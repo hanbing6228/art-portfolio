@@ -105,8 +105,9 @@
       '<button class="peer-min" aria-label="Shrink">' + ((window.ICONS && ICONS.minimize) || "–") + "</button></div>" +
       '<canvas class="peer-canvas"></canvas>';
     document.body.appendChild(win);
+    // anchor bottom-right so the peer windows never cover the top toolbar
     var n = Object.keys(others).length;
-    win.style.top = (92 + n * 130) + "px"; win.style.right = "12px";
+    win.style.right = "10px"; win.style.bottom = (96 + n * 132) + "px"; win.style.top = "auto";
     var cv = win.querySelector(".peer-canvas");
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     cv.style.width = W + "px"; cv.style.height = H + "px";
@@ -128,7 +129,7 @@
       if (e.target.closest("button")) return; // let the head's minimize button work
       dragging = true; try { handle.setPointerCapture(e.pointerId); } catch (_) {}
       var r = el.getBoundingClientRect(); ox = r.left; oy = r.top; sx = e.clientX; sy = e.clientY;
-      el.style.right = "auto"; el.style.left = ox + "px"; el.style.top = oy + "px";
+      el.style.right = "auto"; el.style.bottom = "auto"; el.style.left = ox + "px"; el.style.top = oy + "px";
       e.preventDefault();
     });
     handle.addEventListener("pointermove", function (e) {
@@ -268,7 +269,10 @@
     var name = store.get("chatName", "") || "Artist";
     var ok = (window.Cloud && Cloud.addSubmission) ? await Cloud.addSubmission(name, url) : false;
     if (btn) { btn.disabled = false; btn.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS.check) || "") + "</span> Done — submit"; }
-    toast(ok ? "Submitted! 🎉 Everyone can see it now" : "Submit failed: " + (window.Cloud && window.Cloud.lastError || "check rules"));
+    toast(ok ? "Submitted! 🎉 Saved to the gallery" : "Submit failed: " + (window.Cloud && window.Cloud.lastError || "check rules"));
+    // reset the board for a fresh drawing (the submitted one is safe in the gallery)
+    setup(); allStrokes = []; seen = {}; clearOthers();
+    if (window.Cloud && Cloud.clearBoard) Cloud.clearBoard();
     showGallery();
   }
 
