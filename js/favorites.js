@@ -122,7 +122,7 @@
     });
     btn.textContent = "Add"; btn.disabled = false;
     if (id) { toast("Saved to favorites!"); resetForm(); await reload(); }
-    else toast("Add failed — are you signed in?");
+    else toast("Add failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }
 
   async function reload() {

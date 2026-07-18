@@ -250,7 +250,7 @@
     var ok = await Cloud.saveProfile(prof);
     btn.textContent = "Save profile";
     if (ok) { if (window.applyProfile) applyProfile(Object.assign({ avatar: $("#adAvatarPrev").src }, prof)); toast("Profile saved!"); }
-    else toast("Save failed — check sign-in");
+    else toast("Save failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }
 
   async function addArtwork() {
@@ -270,7 +270,7 @@
       // reset form
       newArtImg = null; $("#adArtPrev").hidden = true; $("#adArtTitle").value = ""; $("#adArtDesc").value = ""; $("#adArtTags").value = "";
       await refreshArtworks();
-    } else toast("Add failed — check sign-in");
+    } else toast("Add failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }
 
   async function renderArtList() {
@@ -318,7 +318,7 @@
       newFavImg = null; parsedImg = null; $("#adFavPrev").hidden = true;
       $("#adFavUrl").value = ""; $("#adFavTitle").value = ""; $("#adFavNote").value = ""; $("#adFavImgUrl").value = "";
       await refreshFaves();
-    } else toast("Add failed — check sign-in");
+    } else toast("Add failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }
 
   async function renderFavList() {

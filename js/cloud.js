@@ -55,7 +55,7 @@
     async saveProfile(obj) {
       if (!(await ok()) || !db) return false;
       try { await F.setDoc(F.doc(db, "profile", "main"), obj, { merge: true }); return true; }
-      catch (e) { console.warn("[cloud] profile save:", e.message || e); return false; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] profile save:", e.message || e); return false; }
     },
 
     /* ---------- artworks (owner writes) ---------- */
@@ -70,7 +70,7 @@
     async addArtwork(obj) {
       if (!(await ok()) || !db) return false;
       try { var ref = await F.addDoc(F.collection(db, "artworks"), Object.assign({}, obj, { created: F.serverTimestamp() })); return ref.id; }
-      catch (e) { console.warn("[cloud] artwork add:", e.message || e); return false; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] artwork add:", e.message || e); return false; }
     },
     async updateArtwork(id, obj) {
       if (!(await ok()) || !db) return false;
@@ -95,7 +95,7 @@
     async addFavorite(obj) {
       if (!(await ok()) || !db) return false;
       try { var ref = await F.addDoc(F.collection(db, "favorites"), Object.assign({}, obj, { created: F.serverTimestamp() })); return ref.id; }
-      catch (e) { console.warn("[cloud] favorite add:", e.message || e); return false; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] favorite add:", e.message || e); return false; }
     },
     async deleteFavorite(id) {
       if (!(await ok()) || !db) return false;
