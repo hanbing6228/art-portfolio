@@ -42,6 +42,7 @@
     $("#gbMsg").value = "";
     render();
     toast("Thanks for your message!");
+    if (window.Achievements) Achievements.bump("messagesLeft");
   }
 
   document.addEventListener("DOMContentLoaded", function () {

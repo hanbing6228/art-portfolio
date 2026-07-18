@@ -1,32 +1,43 @@
-/* ===== Gallery: filters, grid, likes, lightbox, share ===== */
+/* ===== Gallery: Pinterest-style masonry wall with free tags ===== */
 (function () {
-  const LIKES_KEY = "artLikes"; // { artId: true }
+  var LIKES_KEY = "artLikes"; // { artId: true }
 
   function getLikes() { return store.get(LIKES_KEY, {}); }
   function isLiked(id) { return !!getLikes()[id]; }
   function toggleLike(id) {
-    const likes = getLikes();
+    var likes = getLikes();
     if (likes[id]) delete likes[id]; else likes[id] = true;
     store.set(LIKES_KEY, likes);
     return !!likes[id];
   }
   function likeCount(art) {
-    // base count so it feels alive + your own like
-    const base = art.baseLikes != null ? art.baseLikes : 3;
+    var base = art.baseLikes != null ? art.baseLikes : 3;
     return base + (isLiked(art.id) ? 1 : 0);
   }
 
-  let currentFilter = "all";
+  var currentTag = "all";
+
+  // Collect all tags used across artworks, most-common first.
+  function allTags() {
+    var counts = {};
+    (window.ARTWORKS || []).forEach(function (a) {
+      (a.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+    });
+    return Object.keys(counts).sort(function (a, b) {
+      return counts[b] - counts[a] || a.localeCompare(b);
+    });
+  }
 
   function renderFilters() {
-    const wrap = $("#filters");
+    var wrap = $("#filters");
     wrap.innerHTML = "";
-    (window.CATEGORIES || []).forEach((cat) => {
-      const b = document.createElement("button");
-      b.className = "filter-btn" + (cat.id === currentFilter ? " active" : "");
-      b.innerHTML = icon(cat.icon) + " " + cat.name;
-      b.addEventListener("click", () => {
-        currentFilter = cat.id;
+    var tags = ["all"].concat(allTags());
+    tags.forEach(function (tag) {
+      var b = document.createElement("button");
+      b.className = "filter-btn" + (tag === currentTag ? " active" : "");
+      b.innerHTML = (tag === "all" ? icon("sparkle") + " All" : "#" + tag);
+      b.addEventListener("click", function () {
+        currentTag = tag;
         renderFilters();
         renderGrid();
       });
@@ -35,68 +46,101 @@
   }
 
   function visibleArtworks() {
-    const all = window.ARTWORKS || [];
-    return currentFilter === "all" ? all : all.filter((a) => a.category === currentFilter);
+    var all = window.ARTWORKS || [];
+    if (currentTag === "all") return all;
+    return all.filter(function (a) { return (a.tags || []).indexOf(currentTag) !== -1; });
+  }
+
+  function tagChips(art, mini) {
+    return (art.tags || [])
+      .map(function (t) {
+        return '<button class="art-tag" data-tag="' + t + '">#' + t + "</button>";
+      })
+      .join("");
   }
 
   function renderGrid() {
-    const grid = $("#galleryGrid");
+    var grid = $("#galleryGrid");
     grid.innerHTML = "";
-    const items = visibleArtworks();
+    var items = visibleArtworks();
     if (!items.length) {
-      grid.innerHTML = '<p class="gb-empty">No artwork here yet — check back soon!</p>';
+      grid.innerHTML = '<p class="gb-empty">Nothing tagged that yet — try another tag!</p>';
       return;
     }
-    items.forEach((art) => {
-      const card = document.createElement("div");
-      card.className = "art-card";
-      card.innerHTML = `
-        <img src="${art.img}" alt="${art.title}" loading="lazy" />
-        <div class="art-meta">
-          <div class="art-title">${art.title}</div>
-          <div class="art-actions">
-            <button class="like-btn ${isLiked(art.id) ? "liked" : ""}" data-id="${art.id}">
-              ${icon(isLiked(art.id) ? "heart-filled" : "heart")} <span>${likeCount(art)}</span>
-            </button>
-            <button class="mini-btn share-one" data-id="${art.id}">${icon("share")}</button>
-          </div>
-        </div>`;
-      // open lightbox when tapping the image/title
-      card.querySelector("img").addEventListener("click", () => openLightbox(art));
-      card.querySelector(".art-title").addEventListener("click", () => openLightbox(art));
-      // like
-      card.querySelector(".like-btn").addEventListener("click", (e) => {
+    items.forEach(function (art) {
+      var card = document.createElement("div");
+      card.className = "art-card aspect-" + (art.aspect || "square");
+      card.innerHTML =
+        '<div class="art-imgwrap"><img src="' + art.img + '" alt="' + art.title + '" loading="lazy" /></div>' +
+        '<div class="art-meta">' +
+        '<div class="art-title">' + art.title + "</div>" +
+        '<div class="art-tags">' + tagChips(art) + "</div>" +
+        '<div class="art-actions">' +
+        '<button class="like-btn ' + (isLiked(art.id) ? "liked" : "") + '" data-id="' + art.id + '">' +
+        icon(isLiked(art.id) ? "heart-filled" : "heart") + " <span>" + likeCount(art) + "</span></button>" +
+        '<button class="mini-btn share-one" data-id="' + art.id + '">' + icon("share") + "</button>" +
+        "</div></div>";
+
+      card.querySelector(".art-imgwrap").addEventListener("click", function () { openLightbox(art); });
+      card.querySelector(".art-title").addEventListener("click", function () { openLightbox(art); });
+
+      card.querySelector(".like-btn").addEventListener("click", function (e) {
         e.stopPropagation();
-        const liked = toggleLike(art.id);
-        const btn = e.currentTarget;
+        var liked = toggleLike(art.id);
+        var btn = e.currentTarget;
         btn.classList.toggle("liked", liked);
-        btn.innerHTML = `${icon(liked ? "heart-filled" : "heart")} <span>${likeCount(art)}</span>`;
-        if (liked) toast("Thanks for the love!");
+        btn.innerHTML = icon(liked ? "heart-filled" : "heart") + " <span>" + likeCount(art) + "</span>";
+        if (liked) {
+          toast("Thanks for the love!");
+          if (window.Achievements) Achievements.bump("likesGiven");
+        }
       });
-      // share
-      card.querySelector(".share-one").addEventListener("click", (e) => {
+      card.querySelector(".share-one").addEventListener("click", function (e) {
         e.stopPropagation();
-        shareContent(art.title, `Check out "${art.title}" — one of my artworks! 🎨`);
+        shareContent(art.title, 'Check out "' + art.title + '" — one of my artworks!');
+      });
+      // tag chips on a card jump-filter the wall
+      card.querySelectorAll(".art-tag").forEach(function (chip) {
+        chip.addEventListener("click", function (e) {
+          e.stopPropagation();
+          currentTag = chip.dataset.tag;
+          renderFilters();
+          renderGrid();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
       });
       grid.appendChild(card);
     });
   }
 
   /* ---------- Lightbox ---------- */
-  let lightboxArt = null;
+  var lightboxArt = null;
   function openLightbox(art) {
     lightboxArt = art;
     $("#lightboxImg").src = art.img;
     $("#lightboxImg").alt = art.title;
     $("#lightboxTitle").textContent = art.title;
     $("#lightboxDesc").textContent = art.desc || "";
+    var lt = $("#lightboxTags");
+    if (lt) {
+      lt.innerHTML = tagChips(art);
+      lt.querySelectorAll(".art-tag").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+          currentTag = chip.dataset.tag;
+          closeLightbox();
+          renderFilters();
+          renderGrid();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }
     updateLightboxLike();
     $("#lightbox").hidden = false;
   }
   function closeLightbox() { $("#lightbox").hidden = true; lightboxArt = null; }
   function updateLightboxLike() {
     if (!lightboxArt) return;
-    const liked = isLiked(lightboxArt.id);
+    var liked = isLiked(lightboxArt.id);
     $("#lightboxLikeIcon").innerHTML = ICONS[liked ? "heart-filled" : "heart"] || "";
     $("#lightboxLikeCount").textContent = likeCount(lightboxArt);
     $("#lightboxLike").classList.toggle("liked", liked);
@@ -104,21 +148,24 @@
 
   function initLightbox() {
     $("#lightboxClose").addEventListener("click", closeLightbox);
-    $("#lightbox").addEventListener("click", (e) => {
+    $("#lightbox").addEventListener("click", function (e) {
       if (e.target.id === "lightbox") closeLightbox();
     });
-    $("#lightboxLike").addEventListener("click", () => {
+    $("#lightboxLike").addEventListener("click", function () {
       if (!lightboxArt) return;
-      const liked = toggleLike(lightboxArt.id);
+      var liked = toggleLike(lightboxArt.id);
       updateLightboxLike();
-      if (liked) toast("Thanks for the love!");
-      renderGrid(); // keep grid counts in sync
+      if (liked) {
+        toast("Thanks for the love!");
+        if (window.Achievements) Achievements.bump("likesGiven");
+      }
+      renderGrid();
     });
-    $("#lightboxShare").addEventListener("click", () => {
+    $("#lightboxShare").addEventListener("click", function () {
       if (!lightboxArt) return;
-      shareContent(lightboxArt.title, `Check out "${lightboxArt.title}" — one of my artworks! 🎨`);
+      shareContent(lightboxArt.title, 'Check out "' + lightboxArt.title + '" — one of my artworks!');
     });
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox();
     });
   }

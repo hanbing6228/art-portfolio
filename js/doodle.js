@@ -89,6 +89,7 @@
         link.href = canvas.toDataURL("image/png");
         link.click();
         toast("Saved your doodle!");
+        if (window.Achievements) Achievements.bump("doodlesSaved");
       } catch (e) {
         toast("Couldn't save");
       }

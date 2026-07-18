@@ -8,18 +8,24 @@ and installable as a phone app (PWA).
 ## ✨ Features
 
 - **Home** — avatar, name, "age 12" badge, and a *Currently obsessed with* card
-  (Omniscient Reader's Viewpoint 💚)
-- **Gallery** — 5 categories with filter tabs, tap-to-enlarge (lightbox),
-  ❤️ like buttons, and 📤 share on each artwork
+  (Omniscient Reader's Viewpoint)
+- **Gallery** — a **Pinterest-style masonry wall** with mixed card sizes. No rigid
+  folders: every piece is **freely tagged**, and the tag bar builds itself from your
+  tags. Tap any tag to filter. Tap a piece to enlarge (lightbox); like & share each one.
 - **Doodle Pad** — draw with your finger, pick colors, erase, and **save as a PNG**
-- **Quiz** — a short fun quiz about you and ORV, with a shareable score
+- **Story Challenge** — a mini quiz **game** about the story you love: pick a
+  difficulty (Rookie / Adept / Legend), beat the countdown for speed bonuses, build
+  a combo streak, and survive with 3 hearts. Best scores are saved.
+- **Achievements** — earn **badges that level up** through 4 tiers
+  (Bronze → Silver → Gold → Diamond) by playing, liking art, doodling, and leaving
+  messages. Each badge shows your tier and progress to the next one.
 - **About Me + Guestbook** — your intro plus a message board for visitors
 - **Sharing** — a "Share my portfolio" button using the phone's native share
   sheet (social media, Google Chat, etc.), with copy-link fallback
 - **Light/Dark theme**, sparkle taps, and it works **offline** & **installs to your home screen**
 
-All likes / guestbook messages are saved in your browser on your device
-(no accounts, no server — private and safe).
+All likes / guestbook messages / scores / badges are saved in your browser on your
+device (no accounts, no server — private and safe).
 
 ## 🎨 Look & feel
 
@@ -64,18 +70,27 @@ Each artwork looks like this:
 ```js
 {
   id: "wc1",
-  category: "watercolor",   // printmaking | sketch | watercolor | clay | weaving
   title: "Green Hills",
   desc: "Soft watercolor washes of rolling green hills.",
   img: "assets/img/watercolor-1.svg",
+  tags: ["watercolor", "landscape", "nature"], // ANY labels you like
+  aspect: "wide",                              // "tall" | "wide" | "square"
 },
 ```
+
+- **`tags`** are free — mix media (`watercolor`) with themes (`favorite`, `nature`).
+  The gallery's tag bar is built automatically, so there are no folders to manage.
+- **`aspect`** controls the card shape for the mixed masonry look.
 
 **To use a real photo:**
 1. Put your photo in the `assets/img/` folder (e.g. `my-painting.jpg`).
 2. Change that artwork's `img` to `"assets/img/my-painting.jpg"`.
 
 **To add a new artwork:** copy one `{ ... }` block, give it a new `id`, and edit it.
+
+### Bonus: edit the game & badges
+- **Quiz questions** live in `js/quiz.js` (grouped by difficulty) — add your own!
+- **Badges & tiers** live in `js/achievements.js` — tweak names or the tier thresholds.
 
 > The images that come with the project are green-themed **placeholders** so
 > the site looks good before you add your real photos.

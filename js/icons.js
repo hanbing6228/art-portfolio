@@ -135,6 +135,58 @@
       '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 1.8-1 1.3-1.9-.6-1 0-2.1 1.2-2.1H16a4.5 4.5 0 0 0 4.5-4.8C20.2 6.9 16.6 3.5 12 3.5Z" fill="' + C.cream + '" stroke="' + C.teal + '"/>' +
       '<circle cx="8" cy="10" r="1" fill="' + C.blush + '" stroke="' + C.blush + '"/><circle cx="12" cy="8" r="1" fill="' + C.sage + '" stroke="' + C.sage + '"/><circle cx="16" cy="10" r="1" fill="' + C.cyan + '" stroke="' + C.teal + '"/>'
     ),
+
+    /* ---------- Game & achievements ---------- */
+    achievements: svg(
+      '<path d="M8.5 3l-2 6M15.5 3l2 6" stroke="' + C.tan + '"/>' +
+      '<circle cx="12" cy="14.5" r="5.5" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M12 11.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3Z" fill="' + C.cream + '" stroke="' + C.teal + '"/>'
+    ),
+    trophy: svg(
+      '<path d="M7 4h10v3a5 5 0 0 1-10 0Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M7 5H4.5v2a3 3 0 0 0 3 3M17 5h2.5v2a3 3 0 0 1-3 3" stroke="' + C.teal + '"/>' +
+      '<path d="M12 12v3M9 20h6M10 20l.5-3h3l.5 3" stroke="' + C.teal + '"/>'
+    ),
+    timer: svg(
+      '<path d="M9.5 2.5h5" stroke="' + C.teal + '"/>' +
+      '<circle cx="12" cy="13.5" r="7" fill="' + C.cream + '" stroke="' + C.teal + '"/>' +
+      '<path d="M12 13.5V9.5" stroke="' + C.teal + '"/><path d="M18.5 7l1.5-1.5" stroke="' + C.tan + '"/>'
+    ),
+    flame: svg(
+      '<path d="M12 3c1 3 5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 1.8 1.8 2C10.2 8 10.5 5.5 12 3Z" fill="' + C.blush + '" stroke="' + C.teal + '"/>' +
+      '<path d="M12 19a2.4 2.4 0 0 1-2.4-2.4c0-1.4 1.4-2 1.6-3.1.9.7 3.2 1.7 3.2 3.1A2.4 2.4 0 0 1 12 19Z" fill="' + C.tan + '" stroke="none"/>'
+    ),
+    crown: svg(
+      '<path d="M4 8l3 3 5-6 5 6 3-3-1.5 10H5.5Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M5.5 18h13" stroke="' + C.teal + '"/><circle cx="12" cy="5" r="1" fill="' + C.cyan + '" stroke="' + C.teal + '"/>'
+    ),
+    gem: svg(
+      '<path d="M7 4h10l4 5-9 11L3 9Z" fill="' + C.cyan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M3 9h18M9 4l-2 5 5 11 5-11-2-5" stroke="' + C.teal + '"/>'
+    ),
+    lock: svg(
+      '<rect x="5.5" y="10.5" width="13" height="9" rx="2" fill="' + C.cream + '" stroke="' + C.teal + '"/>' +
+      '<path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="' + C.teal + '"/><circle cx="12" cy="15" r="1.2" fill="' + C.teal + '" stroke="' + C.teal + '"/>'
+    ),
+    bolt: svg('<path d="M13 2.5 5 13h5l-1 8.5L19 10h-5Z" fill="' + C.cyan + '" stroke="' + C.teal + '"/>'),
+    target: svg(
+      '<circle cx="12" cy="12" r="8.5" fill="' + C.cream + '" stroke="' + C.teal + '"/>' +
+      '<circle cx="12" cy="12" r="5" fill="' + C.sage + '" stroke="' + C.teal + '"/>' +
+      '<circle cx="12" cy="12" r="1.6" fill="' + C.blush + '" stroke="' + C.teal + '"/>'
+    ),
+    scholar: svg(
+      '<path d="M4 6.5c2.5 0 5 .3 8 1.8 3-1.5 5.5-1.8 8-1.8v11c-2.5 0-5 .3-8 1.8-3-1.5-5.5-1.8-8-1.8Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M12 8.3v11" stroke="' + C.teal + '"/><path d="M6.5 9.5c1.5.2 3 .6 4 1.2M17.5 9.5c-1.5.2-3 .6-4 1.2" stroke="' + C.cream + '"/>'
+    ),
+    chat: svg(
+      '<path d="M4 6.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H10l-4 3.5V15.5H6a2 2 0 0 1-2-2Z" fill="' + C.sage + '" stroke="' + C.teal + '"/>' +
+      '<circle cx="9" cy="10" r="1" fill="' + C.cream + '" stroke="' + C.cream + '"/><circle cx="12" cy="10" r="1" fill="' + C.cream + '" stroke="' + C.cream + '"/><circle cx="15" cy="10" r="1" fill="' + C.cream + '" stroke="' + C.cream + '"/>'
+    ),
+    play: svg('<path d="M7 4.5 19 12 7 19.5Z" fill="' + C.sage + '" stroke="' + C.teal + '"/>'),
+    medal: svg(
+      '<circle cx="12" cy="14" r="6" fill="' + C.tan + '" stroke="' + C.teal + '"/>' +
+      '<path d="M12 11l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2L8.8 13.3 11 13Z" fill="' + C.cream + '" stroke="' + C.teal + '"/>'
+    ),
   };
 
   window.ICONS = ICONS;
