@@ -156,7 +156,8 @@
   /* ---------- sync ---------- */
   function subscribe() {
     unsubBoard = Cloud.watchBoard(function (list) {
-      if (list.length < allStrokes.length) { allStrokes = []; seen = {}; setup(); clearOthers(); } // a clear happened
+      // a clear empties the whole collection → wipe and start fresh
+      if (list.length === 0 && allStrokes.length > 0) { allStrokes = []; seen = {}; setup(); clearOthers(); return; }
       list.forEach(function (s) {
         if (seen[s.id]) return;
         seen[s.id] = 1; allStrokes.push(s);

@@ -112,10 +112,14 @@
       var unsub = null, cancelled = false;
       readyPromise.then(function (r) {
         if (cancelled || !r || !db) return;
-        var q = F.query(F.collection(db, "board"), F.orderBy("created", "asc"), F.limit(2000));
+        // Newest strokes first, then reversed to oldest→newest for drawing. This
+        // way fresh strokes are ALWAYS included even if the board has a big
+        // backlog (an asc+limit query would hide anything past the limit).
+        var q = F.query(F.collection(db, "board"), F.orderBy("created", "desc"), F.limit(2500));
         unsub = F.onSnapshot(q, function (snap) {
-          cb(snap.docs.map(function (d) { var x = d.data(); return { id: d.id, c: x.c, w: x.w, p: x.p || [], cid: x.cid, tool: x.tool }; }));
-        }, function (e) { console.warn("[cloud] board watch:", e.message || e); });
+          var docs = snap.docs.slice().reverse();
+          cb(docs.map(function (d) { var x = d.data(); return { id: d.id, c: x.c, w: x.w, p: x.p || [], cid: x.cid, tool: x.tool }; }));
+        }, function (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] board watch:", e.message || e); });
       });
       return function () { cancelled = true; if (unsub) unsub(); };
     },
