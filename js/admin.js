@@ -204,6 +204,8 @@
     } catch (e) { console.warn("[fav] parse:", e.message || e); }
     return null;
   }
+  // shared so the Favorites page can offer inline "add" too
+  window.parseLinkPreview = parseLink;
   async function fetchPreview() {
     var url = $("#adFavUrl").value.trim();
     if (!url) { toast("Paste a link first"); return; }

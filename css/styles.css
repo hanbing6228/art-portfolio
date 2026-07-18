@@ -119,6 +119,19 @@ body {
 .fav-more { margin-bottom: 10px; }
 .fav-more summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; font-weight: bold; padding: 4px 0; }
 
+/* inline add-favorite bar on the Favorites page (owner only) */
+#favAddBar { margin-bottom: 14px; }
+.fav-inline-form {
+  background: var(--card); border: 2px solid rgba(90,143,78,0.18); border-radius: 16px;
+  padding: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow);
+}
+.fave-card { position: relative; }
+.fave-del {
+  position: absolute; top: 8px; right: 8px; background: rgba(244,242,230,0.9);
+  border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+
 /* ===== Pages ===== */
 #app { position: relative; z-index: 1; max-width: 620px; margin: 0 auto;
        padding: 16px 16px calc(var(--nav-h) + 26px); }
