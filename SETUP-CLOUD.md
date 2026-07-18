@@ -31,12 +31,12 @@ service cloud.firestore {
     // Likes: anyone can read and change the counts
     match /likes/{artId} { allow read, write: if true; }
 
-    // Live drawing board: anyone can read & add a stroke; only the owner clears it
+    // Live drawing board: anyone can read, add a stroke, and clear the board
     match /board/{id} {
       allow read: if true;
-      allow create: if request.resource.data.p is list;
+      allow create: if true;
       allow update: if false;
-      allow delete: if request.auth != null;
+      allow delete: if true;
     }
 
     // "Who's online" presence + floating reactions: open to everyone

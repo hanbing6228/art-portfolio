@@ -70,10 +70,18 @@
     });
   }
 
+  // swap our hand-drawn faces in for their unicode emoji inside a message
+  function faceHTML(escaped) {
+    if (!window.FACES) return escaped;
+    FACES.forEach(function (f) {
+      if (f.e && escaped.indexOf(f.e) >= 0) escaped = escaped.split(f.e).join('<span class="chat-face">' + f.s + "</span>");
+    });
+    return escaped;
+  }
   function bubble(m) {
     return '<div class="gb-item"><div class="gb-who">' + esc(m.name) +
       ' <span style="font-weight:normal;color:var(--muted)">· ' + esc(m.date || "") + "</span></div>" +
-      '<div class="gb-body">' + esc(m.msg) + "</div></div>";
+      '<div class="gb-body">' + faceHTML(esc(m.msg)) + "</div></div>";
   }
   function renderInto(id, chatMode) {
     var list = document.getElementById(id);

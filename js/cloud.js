@@ -122,7 +122,7 @@
     async addStroke(stroke) {
       if (!(await ok()) || !db) return false;
       try { await F.addDoc(F.collection(db, "board"), Object.assign({}, stroke, { created: F.serverTimestamp() })); return true; }
-      catch (e) { console.warn("[cloud] stroke:", e.message || e); return false; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] stroke:", e.message || e); return false; }
     },
     async clearBoard() {
       if (!(await ok()) || !db) return false;
