@@ -63,9 +63,15 @@
   function render() {
     var grid = document.getElementById("favesGrid");
     if (!grid) return;
+    // favorites are private — only the signed-in owner sees them
+    if (!isOwner) {
+      var filt = document.getElementById("favesFilters"); if (filt) filt.innerHTML = "";
+      grid.innerHTML = '<p class="gb-empty">🔒 This collection is private.</p>';
+      return;
+    }
     var items = visible();
     if (!items.length) {
-      grid.innerHTML = '<p class="gb-empty">' + (FAVES.length ? "Nothing tagged that yet." : (isOwner ? "No favorites yet — tap the ➕ button!" : "No favorites yet — check back soon!")) + "</p>";
+      grid.innerHTML = '<p class="gb-empty">' + (FAVES.length ? "Nothing tagged that yet." : "No favorites yet — tap the ➕ button!") + "</p>";
       return;
     }
     grid.innerHTML = "";

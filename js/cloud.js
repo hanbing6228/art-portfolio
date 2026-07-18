@@ -140,6 +140,18 @@
         return true;
       } catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] board clear:", e.message || e); return false; }
     },
+    // remove only MY strokes (for "each their own" — leaves friends' work alone)
+    async clearMyStrokes(cidVal) {
+      if (!(await ok()) || !db) return false;
+      try {
+        for (var i = 0; i < 100; i++) {
+          var snap = await F.getDocs(F.query(F.collection(db, "board"), F.where("cid", "==", cidVal), F.limit(300)));
+          if (snap.empty) break;
+          await Promise.all(snap.docs.map(function (d) { return F.deleteDoc(F.doc(db, "board", d.id)); }));
+        }
+        return true;
+      } catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] clear mine:", e.message || e); return false; }
+    },
     watchLike(id, cb) {
       var unsub = null, cancelled = false;
       readyPromise.then(function (r) {
@@ -160,7 +172,7 @@
       try {
         var q = F.query(F.collection(db, "submissions"), F.orderBy("created", "desc"), F.limit(60));
         var snap = await F.getDocs(q);
-        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img }; });
+        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img, created: x.created && x.created.toMillis ? x.created.toMillis() : 0 }; });
       } catch (e) { console.warn("[cloud] submissions load:", e.message || e); return null; }
     },
     async deleteSubmission(id) {
@@ -270,7 +282,7 @@
       auth = au.getAuth(app);
       F = {
         collection: fs.collection, doc: fs.doc, addDoc: fs.addDoc, getDoc: fs.getDoc, getDocs: fs.getDocs,
-        setDoc: fs.setDoc, deleteDoc: fs.deleteDoc, query: fs.query, orderBy: fs.orderBy, limit: fs.limit,
+        setDoc: fs.setDoc, deleteDoc: fs.deleteDoc, query: fs.query, orderBy: fs.orderBy, limit: fs.limit, where: fs.where,
         serverTimestamp: fs.serverTimestamp, increment: fs.increment, onSnapshot: fs.onSnapshot,
       };
       A = {

@@ -17,6 +17,7 @@
 
   var boardMode = "shared";        // "shared" | "separate"
   var allStrokes = [], seen = {}, others = {}; // others: cid -> {win, ctx, w, h}
+  var sessionStart = 0;            // Show all only lists drawings from this session
 
   function cid() {
     if (clientId) return clientId;
@@ -212,6 +213,7 @@
   }
   function enterLive() {
     if (active) return; active = true;
+    sessionStart = Date.now() - 1000; // "this session" starts now
     setup(); allStrokes = []; seen = {}; clearOthers();
     initStickers();
     bind();
@@ -270,9 +272,18 @@
     var ok = (window.Cloud && Cloud.addSubmission) ? await Cloud.addSubmission(name, url) : false;
     if (btn) { btn.disabled = false; btn.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS.check) || "") + "</span> Done — submit"; }
     toast(ok ? "Submitted! 🎉 Saved to the gallery" : "Submit failed: " + (window.Cloud && window.Cloud.lastError || "check rules"));
-    // reset the board for a fresh drawing (the submitted one is safe in the gallery)
-    setup(); allStrokes = []; seen = {}; clearOthers();
-    if (window.Cloud && Cloud.clearBoard) Cloud.clearBoard();
+    // reset for a fresh drawing (the submitted one is safe in the gallery)
+    setup();
+    if (boardMode === "separate") {
+      // only clear MY work; friends keep drawing
+      if (window.Cloud && Cloud.clearMyStrokes) Cloud.clearMyStrokes(cid());
+      // drop my strokes from the local cache so they don't redraw
+      allStrokes = allStrokes.filter(function (s) { return s.cid !== cid(); });
+    } else {
+      // one shared canvas → clear it for the whole round
+      allStrokes = []; seen = {}; clearOthers();
+      if (window.Cloud && Cloud.clearBoard) Cloud.clearBoard();
+    }
     showGallery();
   }
 
@@ -301,7 +312,8 @@
   function renderGallery(ov, subs) {
     var items = [];
     try { if (canvas) items.push({ name: "You (now)", url: canvas.toDataURL() }); } catch (e) {}
-    (subs || []).forEach(function (s) { if (s.img) items.push({ name: s.name || "Friend", url: s.img, id: s.id }); });
+    // only this session's drawings — no old history
+    (subs || []).forEach(function (s) { if (s.img && (!s.created || s.created >= sessionStart)) items.push({ name: s.name || "Friend", url: s.img, id: s.id }); });
     var counts = galleryCounts;
     var voted = items.filter(function (it) { return it.id; }).map(function (it) { return { name: it.name, n: counts["sub_" + it.id] || 0 }; });
     var summary = "";
@@ -319,7 +331,8 @@
           ? '<button class="bg-like" data-id="' + esc(it.id) + '">' + ((window.ICONS && ICONS.heart) || "♥") + ' <span>' + (counts["sub_" + it.id] || 0) + "</span></button>"
           : "";
         var del = (owner && it.id) ? '<button class="bg-del" data-del="' + esc(it.id) + '">' + ((window.ICONS && ICONS.trash) || "🗑") + "</button>" : "";
-        return '<figure class="bg-item"><img class="bg-img" src="' + it.url + '" data-full="' + esc(it.url) + '" alt="" />' + del + '<figcaption>' + esc(it.name) + "</figcaption>" + likeUI + "</figure>";
+        var keep = owner ? '<button class="bg-keep" data-keep="' + esc(it.url) + '">' + ((window.ICONS && ICONS.star) || "★") + " Save to my art</button>" : "";
+        return '<figure class="bg-item"><img class="bg-img" src="' + it.url + '" data-full="' + esc(it.url) + '" alt="" />' + del + '<figcaption>' + esc(it.name) + "</figcaption>" + likeUI + keep + "</figure>";
       }).join("")
                     : '<p class="gb-empty">No drawings yet — tap “Done — submit” after you draw!</p>') +
       "</div>";
@@ -337,12 +350,23 @@
         btn.classList.add("liked");
       });
     });
-    // owner can prune old drawings from the history
+    // owner can prune drawings
     body.querySelectorAll(".bg-del").forEach(function (btn) {
       btn.addEventListener("click", async function (e) {
         e.stopPropagation();
         if (!confirm("Delete this drawing from the gallery?")) return;
         if (window.Cloud && Cloud.deleteSubmission) { await Cloud.deleteSubmission(btn.dataset.del); toast("Deleted"); }
+      });
+    });
+    // owner can promote a good drawing to the Gallery (artworks) page
+    body.querySelectorAll(".bg-keep").forEach(function (btn) {
+      btn.addEventListener("click", async function (e) {
+        e.stopPropagation();
+        if (!(window.Cloud && Cloud.addArtwork)) return;
+        btn.disabled = true; btn.textContent = "Saving…";
+        var id = await Cloud.addArtwork({ title: "Doodle", desc: "", tags: ["doodle"], aspect: "square", img: btn.dataset.keep });
+        toast(id ? "Saved to your Gallery! 🎨" : "Save failed: " + (window.Cloud.lastError || ""));
+        if (id && window.reloadGallery) { var list = await Cloud.listArtworks(); reloadGallery(list && list.length ? list : null); }
       });
     });
   }
