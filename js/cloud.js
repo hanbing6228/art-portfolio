@@ -163,6 +163,11 @@
         return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img }; });
       } catch (e) { console.warn("[cloud] submissions load:", e.message || e); return null; }
     },
+    async deleteSubmission(id) {
+      if (!(await ok()) || !db) return false;
+      try { await F.deleteDoc(F.doc(db, "submissions", id)); return true; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] submission delete:", e.message || e); return false; }
+    },
     // live-updating list of all submitted drawings (newest first)
     watchSubmissions(cb) {
       var unsub = null, cancelled = false;

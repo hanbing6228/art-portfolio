@@ -306,6 +306,7 @@
       var least = voted.slice().sort(function (a, b) { return a.n - b.n; })[0];
       summary = '<p class="bg-summary">🏆 Most cheers: <b>' + esc(most.name) + "</b> (" + most.n + ") &nbsp;·&nbsp; 🤍 Needs love: <b>" + esc(least.name) + "</b> (" + least.n + ")</p>";
     }
+    var owner = !!(window.Cloud && Cloud.isOwner && Cloud.isOwner());
     var body = ov.querySelector(".bg-body");
     body.innerHTML = summary +
       '<div class="bg-grid">' +
@@ -313,10 +314,15 @@
         var likeUI = it.id
           ? '<button class="bg-like" data-id="' + esc(it.id) + '">' + ((window.ICONS && ICONS.heart) || "♥") + ' <span>' + (counts["sub_" + it.id] || 0) + "</span></button>"
           : "";
-        return '<figure class="bg-item"><img src="' + it.url + '" alt="" /><figcaption>' + esc(it.name) + "</figcaption>" + likeUI + "</figure>";
+        var del = (owner && it.id) ? '<button class="bg-del" data-del="' + esc(it.id) + '">' + ((window.ICONS && ICONS.trash) || "🗑") + "</button>" : "";
+        return '<figure class="bg-item"><img class="bg-img" src="' + it.url + '" data-full="' + esc(it.url) + '" alt="" />' + del + '<figcaption>' + esc(it.name) + "</figcaption>" + likeUI + "</figure>";
       }).join("")
                     : '<p class="gb-empty">No drawings yet — tap “Done — submit” after you draw!</p>') +
       "</div>";
+    // tap a picture → open it big
+    body.querySelectorAll(".bg-img").forEach(function (img) {
+      img.addEventListener("click", function (e) { e.stopPropagation(); if (window.openImageView) openImageView(img.dataset.full); });
+    });
     body.querySelectorAll(".bg-like").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -325,6 +331,14 @@
         galleryCounts["sub_" + btn.dataset.id] = (galleryCounts["sub_" + btn.dataset.id] || 0) + 1;
         var span = btn.querySelector("span"); span.textContent = (+span.textContent || 0) + 1;
         btn.classList.add("liked");
+      });
+    });
+    // owner can prune old drawings from the history
+    body.querySelectorAll(".bg-del").forEach(function (btn) {
+      btn.addEventListener("click", async function (e) {
+        e.stopPropagation();
+        if (!confirm("Delete this drawing from the gallery?")) return;
+        if (window.Cloud && Cloud.deleteSubmission) { await Cloud.deleteSubmission(btn.dataset.del); toast("Deleted"); }
       });
     });
   }
