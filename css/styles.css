@@ -340,9 +340,9 @@ body {
 .pad-swatch.is-eraser { background: #fff; box-shadow: 0 0 0 2px var(--light), 0 2px 6px rgba(47,93,85,0.28); }
 .pad-size-preview { display: block; width: 16px; height: 16px; border-radius: 50%; background: var(--deep); }
 .pad-pop {
-  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  position: fixed; top: 0; left: 0;
   background: var(--card); border: 2px solid var(--light); border-radius: 16px; padding: 12px;
-  box-shadow: var(--shadow); z-index: 40; min-width: 210px;
+  box-shadow: var(--shadow); z-index: 96; min-width: 210px; max-width: calc(100vw - 16px);
 }
 .pad-pop[hidden] { display: none; }
 .pad-pop #doodleColors { display: flex; flex-wrap: wrap; gap: 7px; background: rgba(96,146,94,0.08); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
@@ -358,8 +358,8 @@ body.doodle-fs-lock .bottomnav,
 body.doodle-fs-lock .music-widget,
 body.doodle-fs-lock .chat-fab { display: none; }
 .doodle-stage.fs { position: fixed; inset: 0; z-index: 92; background: var(--bg1); margin: 0; }
-.doodle-stage.fs #soloWrap { position: absolute; inset: 0; }
-.doodle-stage.fs #liveBoardWrap { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.doodle-stage.fs #soloWrap:not([hidden]) { position: absolute; inset: 0; }
+.doodle-stage.fs #liveBoardWrap:not([hidden]) { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .doodle-stage.fs #liveBoardWrap .doodle-canvas { flex: 1; }
 /* in fullscreen the board fills the screen; its chrome hides (use the floating toolbar) */
 .doodle-stage.fs .board-submode, .doodle-stage.fs .live-head, .doodle-stage.fs .sticker-bar, .doodle-stage.fs .board-social { display: none; }

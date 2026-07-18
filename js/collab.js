@@ -163,7 +163,12 @@
     unsubLike = Cloud.watchLike(BOARD_LIKE_ID, function (n) { var el = $("#boardLikeN"); if (el) el.textContent = n; });
     var sid = store.get("sessionId", "s" + Math.random().toString(36).slice(2));
     presStop = Cloud.startPresence(sid);
-    unsubPres = Cloud.watchPresence(function (n) { var el = $("#boardOnlineN"); if (el) el.textContent = n || 1; });
+    var prevPres = 0;
+    unsubPres = Cloud.watchPresence(function (n) {
+      var el = $("#boardOnlineN"); if (el) el.textContent = n || 1;
+      if (prevPres && n > prevPres) toast("A friend joined! 🎨 Draw together!");
+      prevPres = n;
+    });
   }
   function unsubscribe() {
     [unsubBoard, unsubLike, unsubPres, presStop].forEach(function (f) { if (f) f(); });
@@ -219,7 +224,14 @@
     });
     $("#boardLike").addEventListener("click", function () { if (window.Cloud) Cloud.like(BOARD_LIKE_ID); });
     var gal = $("#boardGallery"); if (gal) gal.addEventListener("click", showGallery);
+    var inv = $("#boardInvite"); if (inv) inv.addEventListener("click", invite);
     $$(".board-mode-btn").forEach(function (b) { b.addEventListener("click", function () { setBoardMode(b.dataset.bmode); }); });
+  }
+  // share a link that drops a friend straight into the live board
+  function invite() {
+    var url = location.origin + location.pathname + "?draw=1";
+    if (navigator.share) { navigator.share({ title: "Draw with me on Linrose!", text: "Tap to join my live drawing board 🎨", url: url }).catch(function () {}); }
+    else { try { navigator.clipboard.writeText(url); toast("Invite link copied — send it to a friend!"); } catch (e) { toast(url); } }
   }
 
   /* ---------- gallery view: everyone's drawings side by side ---------- */
@@ -239,8 +251,15 @@
       '<div class="bg-inner"><div class="bg-head"><b>Everyone’s drawings</b>' +
       '<button class="bg-close" aria-label="Close">' + ((window.ICONS && ICONS.close) || "x") + "</button></div>" +
       '<div class="bg-grid">' +
-      items.map(function (it) { return '<figure class="bg-item"><img src="' + it.url + '" alt="" /><figcaption>' + it.name + "</figcaption></figure>"; }).join("") +
-      "</div></div>";
+      (items.length ? items.map(function (it) { return '<figure class="bg-item"><img src="' + it.url + '" alt="" /><figcaption>' + it.name + "</figcaption></figure>"; }).join("")
+                    : '<p class="gb-empty">No drawings yet — start sketching!</p>') +
+      "</div>" +
+      '<div class="bg-react">' + STICKERS.map(function (s) { return '<button class="sticker" data-s="' + s + '">' + s + "</button>"; }).join("") + "</div>" +
+      '<p class="page-sub" style="text-align:center;margin:0 0 14px">Tap an emoji to cheer each other on!</p>' +
+      "</div>";
+    ov.querySelectorAll(".bg-react .sticker").forEach(function (btn) {
+      btn.addEventListener("click", function (e) { e.stopPropagation(); if (window.Cloud) Cloud.sendReaction(btn.dataset.s); });
+    });
     ov.hidden = false;
   }
 

@@ -56,81 +56,132 @@
     if (r) r.disabled = !redoStack.length;
   }
 
-  /* ---------- drawing ---------- */
+  /* ---------- drawing engine ----------
+     Each stroke is re-rendered from a snapshot of the canvas taken when the
+     stroke began. That keeps every brush smooth (quadratic curves, no
+     "beading" on fast moves) and gives translucent brushes an even, uniform
+     tone instead of dark blobs where segments overlap. */
+  var baseCanvas = document.createElement("canvas"), baseCtx = baseCanvas.getContext("2d");
+  var cur = []; // points of the in-progress stroke, in CSS pixels
   function pos(e) { var rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
-  function strokeStyleFor(pressure) {
-    if (tool === "eraser") return "rgba(255,255,255,1)";
-    var a = opacity;
-    if (tool === "marker") a = opacity * 0.4;
-    else if (tool === "highlighter") a = opacity * 0.28;
-    return hexToRgba(color, a);
+
+  function captureBase() {
+    baseCanvas.width = canvas.width; baseCanvas.height = canvas.height;
+    baseCtx.setTransform(1, 0, 0, 1, 0, 0);
+    baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
+    baseCtx.drawImage(canvas, 0, 0);
   }
-  function widthFor(pressure) {
-    var mult = tool === "marker" ? 1.7 : tool === "highlighter" ? 2.8 : tool === "oil" ? 2.3 : tool === "ink" ? 1.5 : tool === "pencil" ? 0.55 : 1;
-    var w = brush * mult;
-    if (tool === "highlighter") return Math.max(3, w); // flat, chunky
-    var pr = (pressure && pressure > 0 && pressure !== 0.5) ? pressure : 0.6; // pens/touch vary; mouse ~0.5
-    if (tool === "ink") return Math.max(1, w * (0.2 + 1.5 * pr));   // 毛笔: big thin↔thick range
-    if (tool === "oil") return Math.max(3, w * (0.8 + 0.4 * pr));    // 油画笔: fat, steadier
-    return Math.max(1, w * (0.55 + 0.9 * pr));
+  function restoreBase() {
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(baseCanvas, 0, 0);
+    ctx.restore();
   }
+
+  // distinct look per brush (works even with no stylus pressure)
+  function brushParams() {
+    switch (tool) {
+      case "eraser":      return { color: "#ffffff", width: brush, alpha: 1, cap: "round", type: "solid" };
+      case "pencil":      return { color: color, width: Math.max(1, brush * 0.55), alpha: 0.9 * opacity, cap: "round", type: "pencil" };
+      case "marker":      return { color: color, width: brush * 2, alpha: 0.5 * opacity, cap: "butt", type: "solid" };
+      case "highlighter": return { color: color, width: brush * 3.6, alpha: 0.22 * opacity, cap: "butt", type: "solid" };
+      case "ink":         return { color: color, width: brush * 1.3, alpha: opacity, cap: "round", type: "ink" };
+      case "oil":         return { color: color, width: brush * 2.3, alpha: opacity, cap: "round", type: "oil" };
+      default:            return { color: color, width: brush, alpha: opacity, cap: "round", type: "solid" }; // pen
+    }
+  }
+
+  function smoothPath(pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i].x + pts[i + 1].x) / 2, my = (pts[i].y + pts[i + 1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    ctx.stroke();
+  }
+  function renderStroke(pts) {
+    var pr = brushParams();
+    ctx.save();
+    ctx.globalAlpha = pr.alpha;
+    ctx.lineCap = pr.cap; ctx.lineJoin = "round";
+    ctx.strokeStyle = pr.color; ctx.fillStyle = pr.color;
+    if (pts.length === 1) {
+      ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, Math.max(0.6, pr.width / 2), 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); return;
+    }
+    if (pr.type === "ink") {
+      // 毛笔: line thins with speed, thickens when slow → calligraphic taper
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1], b = pts[i], d = Math.hypot(b.x - a.x, b.y - a.y);
+        ctx.lineWidth = pr.width * Math.max(0.25, Math.min(2.1, 7 / (d + 3.5)));
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+    } else if (pr.type === "oil") {
+      // 油画笔: several parallel bristles for a dry, streaky look
+      for (var bnd = -1; bnd <= 1; bnd++) {
+        ctx.globalAlpha = pr.alpha * (bnd === 0 ? 1 : 0.5);
+        ctx.lineWidth = pr.width * (bnd === 0 ? 1 : 0.4);
+        ctx.beginPath();
+        for (var j = 0; j < pts.length; j++) {
+          var p = pts[j], nx = 0, ny = 0;
+          if (j > 0) { var dx = p.x - pts[j - 1].x, dy = p.y - pts[j - 1].y, l = Math.hypot(dx, dy) || 1; nx = -dy / l; ny = dx / l; }
+          var off = bnd * pr.width * 0.34;
+          if (j === 0) ctx.moveTo(p.x + nx * off, p.y + ny * off); else ctx.lineTo(p.x + nx * off, p.y + ny * off);
+        }
+        ctx.stroke();
+      }
+    } else if (pr.type === "pencil") {
+      ctx.lineWidth = pr.width; smoothPath(pts);
+      // grainy speckle so it reads like graphite
+      ctx.globalAlpha = pr.alpha * 0.45;
+      for (var k = 0; k < pts.length; k += 2) {
+        var q = pts[k], s = (k * 928371) % 97;
+        ctx.beginPath();
+        ctx.arc(q.x + ((s % 7) - 3) * 0.6, q.y + (((s >> 2) % 7) - 3) * 0.6, pr.width * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      ctx.lineWidth = pr.width; smoothPath(pts);
+    }
+    ctx.restore();
+  }
+
   // double-tap on the canvas undoes the last stroke
   var lastTapTime = 0, lastTapX = 0, lastTapY = 0, wasTap = false, skipStroke = false, movedDist = 0;
   function start(e) {
     if (!ready) return;
     e.preventDefault();
-    var p = pos(e);
-    var now = Date.now();
+    var p = pos(e), now = Date.now();
     if (wasTap && now - lastTapTime < 320 && Math.abs(p.x - lastTapX) < 26 && Math.abs(p.y - lastTapY) < 26) {
-      // double-tap → undo (removes the first tap's dot, then the stroke before it)
       skipStroke = true; wasTap = false; lastTapTime = 0;
       undo(); undo();
       return;
     }
     drawing = true; skipStroke = false; movedDist = 0;
     lastX = p.x; lastY = p.y;
-    ctx.strokeStyle = strokeStyleFor(e.pressure);
-    ctx.fillStyle = strokeStyleFor(e.pressure);
-    var w = widthFor(e.pressure);
-    ctx.beginPath(); ctx.arc(p.x, p.y, w / 2, 0, Math.PI * 2); ctx.fill();
+    captureBase();
+    cur = [{ x: p.x, y: p.y }];
+    restoreBase(); renderStroke(cur);
   }
   function move(e) {
     if (!drawing) return;
     e.preventDefault();
     var p = pos(e);
     movedDist += Math.abs(p.x - lastX) + Math.abs(p.y - lastY);
-    var w = widthFor(e.pressure);
-    if (tool === "oil") {
-      // 油画笔: a few parallel bristle strokes for a dry, textured look
-      var dx = p.x - lastX, dy = p.y - lastY, len = Math.hypot(dx, dy) || 1;
-      var nx = -dy / len, ny = dx / len, base = strokeStyleFor(e.pressure);
-      for (var i = -1; i <= 1; i++) {
-        ctx.strokeStyle = i === 0 ? base : hexToRgba(color, 0.45);
-        ctx.lineWidth = w * (i === 0 ? 1 : 0.35);
-        var off = i * w * 0.32;
-        ctx.beginPath(); ctx.moveTo(lastX + nx * off, lastY + ny * off); ctx.lineTo(p.x + nx * off, p.y + ny * off); ctx.stroke();
-      }
-    } else {
-      ctx.strokeStyle = strokeStyleFor(e.pressure);
-      ctx.lineWidth = w;
-      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
-    }
+    cur.push({ x: p.x, y: p.y });
+    restoreBase(); renderStroke(cur);
     lastX = p.x; lastY = p.y;
   }
   function end() {
     if (skipStroke) { skipStroke = false; return; }
     if (drawing) {
       drawing = false; pushHistory();
+      var lp = cur[cur.length - 1] || { x: lastX, y: lastY };
       wasTap = movedDist < 8;                 // a quick, still touch counts as a "tap"
-      lastTapTime = Date.now(); lastTapX = lastX; lastTapY = lastY;
+      lastTapTime = Date.now(); lastTapX = lp.x; lastTapY = lp.y;
     }
-  }
-
-  function hexToRgba(hex, a) {
-    hex = hex.replace("#", "");
-    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
-    var n = parseInt(hex, 16);
-    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
   }
 
   /* ---------- controls ---------- */
@@ -175,7 +226,19 @@
     var p = $("#" + popId); if (!p) return;
     var willOpen = p.hidden;
     closePops();
-    if (willOpen) { p.hidden = false; var b = $("#" + btnId); if (b) b.classList.add("active"); }
+    if (willOpen) {
+      p.hidden = false;
+      var b = $("#" + btnId);
+      if (b) { b.classList.add("active"); positionPop(p, b); }
+    }
+  }
+  // keep the popover on-screen (the toolbar can be dragged to any edge)
+  function positionPop(p, b) {
+    var br = b.getBoundingClientRect(), pr = p.getBoundingClientRect();
+    var left = Math.max(8, Math.min(br.left + br.width / 2 - pr.width / 2, window.innerWidth - pr.width - 8));
+    var top = br.bottom + 8;
+    if (top + pr.height > window.innerHeight - 8) top = Math.max(8, br.top - pr.height - 8);
+    p.style.left = left + "px"; p.style.top = top + "px";
   }
 
   function initControls() {
@@ -232,6 +295,9 @@
   function timeUp() {
     showTimer(0); toast("Time's up! ⏰");
     var s = stage(); if (s) { s.classList.add("time-up"); setTimeout(function () { s.classList.remove("time-up"); }, 1600); }
+    setTimeout(function () { showTimer(-1); }, 2200);   // the timer badge auto-disappears
+    timerStep = 0; var btn = $("#padTimerBtn"); if (btn) btn.classList.remove("active");
+    window.dispatchEvent(new Event("doodle-timeup"));   // Draw Together shows everyone's boards
   }
 
   /* ---------- fullscreen canvas + draggable / collapsible toolbar ---------- */

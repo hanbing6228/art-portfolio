@@ -1,6 +1,6 @@
 /* Service worker: network-first so deployed updates show right away;
    falls back to cache when offline. */
-const CACHE = "art-portfolio-v22";
+const CACHE = "art-portfolio-v23";
 const ASSETS = [
   "./",
   "./index.html",

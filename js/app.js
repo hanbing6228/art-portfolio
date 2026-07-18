@@ -346,6 +346,21 @@
     } catch (e) {}
   }
 
+  /* ---------- Invite link: ?draw=1 drops you into the live board ---------- */
+  function initDrawInvite() {
+    try {
+      var q = new URLSearchParams(location.search);
+      if (!q.get("draw")) return;
+      history.replaceState({}, "", location.pathname);
+      setTimeout(function () {
+        goTo("doodle");
+        var t = document.querySelector('.mode-btn[data-mode="live"]');
+        if (t) t.click();
+        toast("Joining the live board… 🎨");
+      }, 350);
+    } catch (e) {}
+  }
+
   /* ---------- PWA service worker ---------- */
   function initPWA() {
     if ("serviceWorker" in navigator) {
@@ -364,5 +379,6 @@
     initShareButton();
     initPWA();
     initShareTarget();
+    initDrawInvite();
   });
 })();

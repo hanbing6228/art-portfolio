@@ -29,9 +29,19 @@ service cloud.firestore {
     }
 
     // Likes: anyone can read and change the counts
-    match /likes/{artId} {
-      allow read, write: if true;
+    match /likes/{artId} { allow read, write: if true; }
+
+    // Live drawing board: anyone can read & add a stroke; only the owner clears it
+    match /board/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.p is list;
+      allow update: if false;
+      allow delete: if request.auth != null;
     }
+
+    // "Who's online" presence + floating reactions: open to everyone
+    match /presence/{id}  { allow read, write: if true; }
+    match /reactions/{id} { allow read: if true; allow create: if true; }
 
     // Profile, artworks & favorites: anyone can READ, only the signed-in owner can WRITE
     match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
@@ -40,6 +50,11 @@ service cloud.firestore {
   }
 }
 ```
+
+> **If drawing together / "who's online" isn't syncing between two phones**, it's
+> almost always because the `board`, `presence`, and `reactions` rules above
+> aren't published yet. Re-paste this whole block into Firestore → Rules →
+> **Publish**, then reload both phones.
 
 ## 2. Turn on owner login
 1. Firebase console → **Build → Authentication → Get started**.
