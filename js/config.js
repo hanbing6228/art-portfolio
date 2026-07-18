@@ -44,4 +44,14 @@ window.CONFIG = {
     youtube: "",
     email: "",       // e.g. "you@example.com"
   },
+
+  // --- Cloud sync (optional) ☁️ ---
+  // Fill these in to make the GUESTBOOK and LIKES shared by everyone and
+  // never lost (see SETUP-CLOUD.md for the 5-minute setup).
+  // Leave them "" to keep everything on this device only (localStorage).
+  // Both values are SAFE to be public — do NOT paste any "service"/secret key here.
+  cloud: {
+    url: "",        // e.g. "https://xxxxxxxx.supabase.co"
+    anonKey: "",    // the Supabase "anon public" key
+  },
 };

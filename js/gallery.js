@@ -1,16 +1,24 @@
 /* ===== Gallery: Pinterest-style masonry wall with free tags ===== */
 (function () {
-  var LIKES_KEY = "artLikes"; // { artId: true }
+  var LIKES_KEY = "artLikes"; // { artId: true } — tracks THIS device's likes
+  var cloudCounts = null;     // shared counts from the cloud, when enabled
 
   function getLikes() { return store.get(LIKES_KEY, {}); }
   function isLiked(id) { return !!getLikes()[id]; }
   function toggleLike(id) {
     var likes = getLikes();
+    var nowLiked = !likes[id];
     if (likes[id]) delete likes[id]; else likes[id] = true;
     store.set(LIKES_KEY, likes);
-    return !!likes[id];
+    // when cloud is on, adjust the shared count and push the change up
+    if (window.Cloud && Cloud.enabled) {
+      if (cloudCounts) cloudCounts[id] = Math.max(0, (cloudCounts[id] || 0) + (nowLiked ? 1 : -1));
+      if (nowLiked) Cloud.like(id); else Cloud.unlike(id);
+    }
+    return nowLiked;
   }
   function likeCount(art) {
+    if (window.Cloud && Cloud.enabled && cloudCounts) return cloudCounts[art.id] || 0;
     var base = art.baseLikes != null ? art.baseLikes : 3;
     return base + (isLiked(art.id) ? 1 : 0);
   }
@@ -174,5 +182,11 @@
     renderFilters();
     renderGrid();
     initLightbox();
+    // if cloud is on, load shared like counts and refresh the numbers
+    if (window.Cloud && Cloud.enabled) {
+      Cloud.getLikeCounts().then(function (m) {
+        if (m) { cloudCounts = m; renderGrid(); }
+      });
+    }
   });
 })();
