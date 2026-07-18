@@ -17,7 +17,7 @@
 
   <!-- top bar -->
   <header class="topbar">
-    <span class="topbar-title"><span class="ic" data-icon="palette"></span> My Portfolio</span>
+    <span class="topbar-title"><span class="ic" data-icon="palette"></span> <span id="siteTitle">Linrose</span></span>
     <span class="topbar-actions">
       <button id="adminBtn" class="icon-btn" aria-label="Manage" title="Manage"><span class="ic" data-icon="gear"></span></button>
       <button id="themeToggle" class="icon-btn" aria-label="Toggle light/dark"><span class="ic" data-icon="moon"></span></button>
@@ -48,9 +48,16 @@
 
     <!-- ============ GALLERY ============ -->
     <section id="gallery" class="page">
-      <h2 class="page-title">My Work <span class="ic" data-icon="sparkle"></span></h2>
+      <h2 class="page-title"><span id="galleryTitle">Linrose</span> <span class="ic" data-icon="sparkle"></span></h2>
       <div class="filters" id="filters"></div>
       <div class="grid" id="galleryGrid"></div>
+    </section>
+
+    <!-- ============ FAVORITES ============ -->
+    <section id="favorites" class="page">
+      <h2 class="page-title">Favorites <span class="ic" data-icon="star"></span></h2>
+      <p class="page-sub">Beautiful things I've found and collected.</p>
+      <div class="grid" id="favesGrid"></div>
     </section>
 
     <!-- ============ DOODLE ============ -->
@@ -107,6 +114,7 @@
   <nav class="bottomnav" id="bottomnav">
     <button class="nav-btn active" data-target="home"><span class="ic" data-icon="home"></span>Home</button>
     <button class="nav-btn" data-target="gallery"><span class="ic" data-icon="gallery"></span>Gallery</button>
+    <button class="nav-btn" data-target="favorites"><span class="ic" data-icon="star"></span>Faves</button>
     <button class="nav-btn" data-target="doodle"><span class="ic" data-icon="doodle"></span>Doodle</button>
     <button class="nav-btn" data-target="quiz"><span class="ic" data-icon="play"></span>Game</button>
     <button class="nav-btn" data-target="about"><span class="ic" data-icon="about"></span>About</button>
@@ -137,6 +145,7 @@
   <script src="js/app.js"></script>
   <script src="js/achievements.js"></script>
   <script src="js/gallery.js"></script>
+  <script src="js/favorites.js"></script>
   <script src="js/doodle.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/guestbook.js"></script>

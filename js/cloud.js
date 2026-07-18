@@ -83,6 +83,26 @@
       catch (e) { console.warn("[cloud] artwork delete:", e.message || e); return false; }
     },
 
+    /* ---------- favorites / collection (owner writes) ---------- */
+    async listFavorites() {
+      if (!(await ok()) || !db) return null;
+      try {
+        var q = F.query(F.collection(db, "favorites"), F.orderBy("created", "desc"));
+        var snap = await F.getDocs(q);
+        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, url: x.url || "", title: x.title || "", note: x.note || "", img: x.img || "" }; });
+      } catch (e) { console.warn("[cloud] favorites load:", e.message || e); return null; }
+    },
+    async addFavorite(obj) {
+      if (!(await ok()) || !db) return false;
+      try { var ref = await F.addDoc(F.collection(db, "favorites"), Object.assign({}, obj, { created: F.serverTimestamp() })); return ref.id; }
+      catch (e) { console.warn("[cloud] favorite add:", e.message || e); return false; }
+    },
+    async deleteFavorite(id) {
+      if (!(await ok()) || !db) return false;
+      try { await F.deleteDoc(F.doc(db, "favorites", id)); return true; }
+      catch (e) { console.warn("[cloud] favorite delete:", e.message || e); return false; }
+    },
+
     /* ---------- auth (owner) ---------- */
     async signIn(email, password) {
       if (!(await ok()) || !auth) return { ok: false, error: "Cloud not ready" };

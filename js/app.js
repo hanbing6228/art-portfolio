@@ -58,14 +58,30 @@
   /* ---------- Profile (from config, overridable by cloud) ---------- */
   // A profile object may come from the cloud (owner-edited). Any missing field
   // falls back to CONFIG in js/config.js.
+  function escapeText(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
+  var BADGE_ICONS = ["cake", "book", "leaf", "star", "sparkle"];
+
   window.applyProfile = function (p) {
     p = p || {};
     var obs = cfg.obsession || {};
-    $("#heroName").textContent = p.name || cfg.name || "My Name";
-    $("#heroTagline").textContent = p.tagline != null ? p.tagline : (cfg.tagline || "");
+    var setText = function (sel, val) { var el = $(sel); if (el) el.textContent = val; };
+
+    setText("#heroName", p.name || cfg.name || "My Name");
+    setText("#heroTagline", p.tagline != null ? p.tagline : (cfg.tagline || ""));
     $("#avatarImg").src = p.avatar || cfg.avatar || "assets/img/avatar.svg";
-    $("#obsessionTitle").textContent = p.obsessionTitle != null ? p.obsessionTitle : (obs.title || "");
-    $("#obsessionNote").textContent = p.obsessionNote != null ? p.obsessionNote : (obs.note || "");
+    setText("#obsessionTitle", p.obsessionTitle != null ? p.obsessionTitle : (obs.title || ""));
+    setText("#obsessionNote", p.obsessionNote != null ? p.obsessionNote : (obs.note || ""));
+    setText("#siteTitle", p.siteTitle || cfg.siteTitle || "Portfolio");
+    setText("#galleryTitle", p.galleryTitle || cfg.galleryTitle || "My Work");
+
+    // badges (editable list of labels)
+    var badgeList = (p.badges && p.badges.length ? p.badges : (cfg.badges || []));
+    var badges = $("#badges");
+    if (badges) {
+      badges.innerHTML = badgeList
+        .map(function (label, i) { return '<span class="badge">' + icon(BADGE_ICONS[i] || "star") + " " + escapeText(label) + "</span>"; })
+        .join("");
+    }
 
     var about = $("#aboutText");
     about.innerHTML = "";
@@ -82,19 +98,6 @@
   /* ---------- Hero / About content ---------- */
   function fillContent() {
     applyProfile(null);
-
-    // badges on home
-    const badges = $("#badges");
-    if (badges) {
-      const list = [
-        { icon: "cake", label: "Age " + (cfg.age || 12) },
-        { icon: "book", label: "Manga Lover" },
-        { icon: "leaf", label: "Green Fan" },
-      ];
-      badges.innerHTML = list
-        .map((b) => `<span class="badge">${icon(b.icon)} ${b.label}</span>`)
-        .join("");
-    }
 
     // quick links on home
     const ql = $("#quickLinks");

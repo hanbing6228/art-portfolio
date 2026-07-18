@@ -33,9 +33,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // Profile & artworks: anyone can READ, only the signed-in owner can WRITE
+    // Profile, artworks & favorites: anyone can READ, only the signed-in owner can WRITE
     match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
     match /artworks/{artId} { allow read: if true; allow write: if request.auth != null; }
+    match /favorites/{id}   { allow read: if true; allow write: if request.auth != null; }
   }
 }
 ```

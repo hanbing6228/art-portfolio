@@ -1,5 +1,6 @@
-/* Minimal service worker: offline-capable, cache-first for app shell. */
-const CACHE = "art-portfolio-v5";
+/* Service worker: network-first so deployed updates show right away;
+   falls back to cache when offline. */
+const CACHE = "art-portfolio-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +13,7 @@ const ASSETS = [
   "./js/app.js",
   "./js/achievements.js",
   "./js/gallery.js",
+  "./js/favorites.js",
   "./js/doodle.js",
   "./js/quiz.js",
   "./js/guestbook.js",
@@ -33,20 +35,18 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Network-first for same-origin GETs: always try the network, update the
+// cache, and only use the cache if the network fails (offline).
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  if (new URL(e.request.url).origin !== self.location.origin) return; // let cross-origin (Firebase/gstatic) pass through
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return (
-        cached ||
-        fetch(e.request)
-          .then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-            return res;
-          })
-          .catch(() => cached)
-      );
-    })
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

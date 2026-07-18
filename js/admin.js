@@ -43,7 +43,7 @@
   }
 
   /* ---------- overlay DOM ---------- */
-  var overlay, newAvatar = null, newArtImg = null;
+  var overlay, newAvatar = null, newArtImg = null, newFavImg = null;
 
   function buildOverlay() {
     overlay = document.createElement("div");
@@ -107,10 +107,13 @@
       '<label class="tool-chip">Change photo<input id="adAvatarFile" type="file" accept="image/*" hidden /></label></div>' +
       field("adName", "Name", prof.name || cfg.name || "") +
       field("adTagline", "Tagline", prof.tagline != null ? prof.tagline : (cfg.tagline || "")) +
+      field("adSiteTitle", "Site title (top bar)", prof.siteTitle || cfg.siteTitle || "") +
+      field("adGalleryTitle", "Gallery heading", prof.galleryTitle || cfg.galleryTitle || "") +
       field("adObsT", "Obsessed with (title)", prof.obsessionTitle != null ? prof.obsessionTitle : (obs.title || "")) +
       field("adObsN", "Obsessed with (note)", prof.obsessionNote != null ? prof.obsessionNote : (obs.note || "")) +
       area("adAbout", "About me (one line per paragraph)", (prof.about && prof.about.length ? prof.about : (cfg.about || [])).join("\n")) +
       area("adFacts", "Fun facts (one per line)", (prof.funFacts && prof.funFacts.length ? prof.funFacts : (cfg.funFacts || [])).join("\n")) +
+      area("adBadges", "Home badges (one per line)", (prof.badges && prof.badges.length ? prof.badges : (cfg.badges || [])).join("\n")) +
       '<button class="tool-chip primary" id="adSaveProfile">Save profile</button>' +
       "</div>" +
       // ---- add artwork ----
@@ -126,6 +129,19 @@
       "</div>" +
       // ---- existing artworks ----
       '<div class="admin-section"><h3>My artworks</h3><div id="adArtList" class="admin-art-list"></div></div>' +
+      // ---- add favorite ----
+      '<div class="admin-section"><h3>Add favorite</h3>' +
+      '<p class="page-sub" style="margin:0 0 10px">Collect anything you love — a Pinterest pin, a web page, a pretty image.</p>' +
+      field("adFavUrl", "Link (paste the page or image URL)", "") +
+      field("adFavTitle", "Title", "") +
+      field("adFavNote", "Note (optional)", "") +
+      '<label class="tool-chip">Upload an image<input id="adFavFile" type="file" accept="image/*" hidden /></label>' +
+      field("adFavImgUrl", "…or paste an image URL", "") +
+      '<img id="adFavPrev" class="admin-art-prev" hidden alt="preview" />' +
+      '<button class="tool-chip primary" id="adAddFav">Add favorite</button>' +
+      "</div>" +
+      // ---- existing favorites ----
+      '<div class="admin-section"><h3>My favorites</h3><div id="adFavList" class="admin-art-list"></div></div>' +
       // ---- sign out ----
       '<button class="tool-chip" id="adSignOut">Sign out</button>';
 
@@ -141,10 +157,18 @@
       newArtImg = await resizeToDataURL(f, 1000, 0.82);
       var prev = $("#adArtPrev"); prev.src = newArtImg; prev.hidden = false;
     });
+    // favorite picker
+    $("#adFavFile").addEventListener("change", async function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      newFavImg = await resizeToDataURL(f, 1000, 0.82);
+      var prev = $("#adFavPrev"); prev.src = newFavImg; prev.hidden = false;
+    });
     $("#adSaveProfile").addEventListener("click", saveProfile);
     $("#adAddArt").addEventListener("click", addArtwork);
+    $("#adAddFav").addEventListener("click", addFavorite);
     $("#adSignOut").addEventListener("click", async function () { await Cloud.signOutOwner(); close(); toast("Signed out"); });
     renderArtList();
+    renderFavList();
   }
 
   function field(id, label, val) {
@@ -162,10 +186,13 @@
     var prof = {
       name: $("#adName").value.trim(),
       tagline: $("#adTagline").value.trim(),
+      siteTitle: $("#adSiteTitle").value.trim(),
+      galleryTitle: $("#adGalleryTitle").value.trim(),
       obsessionTitle: $("#adObsT").value.trim(),
       obsessionNote: $("#adObsN").value.trim(),
       about: lines($("#adAbout").value),
       funFacts: lines($("#adFacts").value),
+      badges: lines($("#adBadges").value),
     };
     if (newAvatar) prof.avatar = newAvatar;
     var ok = await Cloud.saveProfile(prof);
@@ -217,5 +244,54 @@
     await renderArtList();
     var list = await Cloud.listArtworks();
     if (window.reloadGallery) reloadGallery(list && list.length ? list : null);
+  }
+
+  /* ---------- favorites ---------- */
+  async function addFavorite() {
+    var url = $("#adFavUrl").value.trim();
+    var imgUrl = $("#adFavImgUrl").value.trim();
+    var img = newFavImg || imgUrl || "";
+    if (!url && !img) { toast("Add a link or an image"); return; }
+    var btn = $("#adAddFav"); btn.textContent = "Adding…";
+    var fav = {
+      url: url,
+      title: $("#adFavTitle").value.trim(),
+      note: $("#adFavNote").value.trim(),
+      img: img,
+    };
+    var id = await Cloud.addFavorite(fav);
+    btn.textContent = "Add favorite";
+    if (id) {
+      toast("Saved to favorites!");
+      newFavImg = null; $("#adFavPrev").hidden = true;
+      $("#adFavUrl").value = ""; $("#adFavTitle").value = ""; $("#adFavNote").value = ""; $("#adFavImgUrl").value = "";
+      await refreshFaves();
+    } else toast("Add failed — check sign-in");
+  }
+
+  async function renderFavList() {
+    var host = $("#adFavList");
+    if (!host) return;
+    var list = (await Cloud.listFavorites()) || [];
+    if (!list.length) { host.innerHTML = '<p class="gb-empty">No favorites yet.</p>'; return; }
+    host.innerHTML = list.map(function (f) {
+      var thumb = f.img ? '<img src="' + f.img.replace(/"/g, "&quot;") + '" alt="" referrerpolicy="no-referrer" />' : '<span class="fave-thumb-ph">' + iconRaw("link") + "</span>";
+      return '<div class="admin-art-item">' + thumb + '<span>' + escHtml(f.title || f.url || "favorite") + "</span>" +
+        '<button class="mini-btn" data-delfav="' + f.id + '">' + iconRaw("trash") + "</button></div>";
+    }).join("");
+    host.querySelectorAll("[data-delfav]").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        if (!confirm("Remove this favorite?")) return;
+        await Cloud.deleteFavorite(b.getAttribute("data-delfav"));
+        await refreshFaves();
+        toast("Removed");
+      });
+    });
+  }
+
+  async function refreshFaves() {
+    await renderFavList();
+    var list = await Cloud.listFavorites();
+    if (window.reloadFaves) reloadFaves(list || []);
   }
 })();

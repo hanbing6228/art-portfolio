@@ -6,10 +6,15 @@
 
 window.CONFIG = {
   // --- Your name & who you are ---
-  name: "My Name",                 // <-- put your name here
+  name: "Linrose",                 // <-- put your name here
   tagline: "Young Artist & Maker",  // a short line under your name
   age: 12,
   emoji: "🎨",
+
+  // --- Branding (also editable in the ⚙️ Manage panel) ---
+  siteTitle: "Linrose",            // shown in the top bar
+  galleryTitle: "Linrose",         // heading above your artwork wall
+  badges: ["Age 12", "Manga Lover", "Green Fan"], // little chips on the home page
 
   // --- Your avatar picture ---
   // Put your own photo in  assets/img/  and change this to it,

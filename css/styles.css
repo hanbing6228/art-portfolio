@@ -107,6 +107,13 @@ body {
 .admin-art-item span { flex: 1; font-weight: bold; color: var(--deep); font-size: 0.9rem; }
 .admin-section label.tool-chip { align-self: flex-start; }
 
+/* ===== Favorites cards ===== */
+.fave-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; line-height: 1.35; }
+.fave-link { font-size: 0.72rem; color: var(--mid); font-weight: bold; display: flex; align-items: center; gap: 4px; }
+.fave-card.noimg .art-imgwrap { display: none; }
+.fave-thumb-ph { width: 44px; height: 44px; border-radius: 8px; background: var(--cream); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.fave-thumb-ph .ic-svg { width: 1.3rem; height: 1.3rem; }
+
 /* ===== Pages ===== */
 #app { position: relative; z-index: 1; max-width: 620px; margin: 0 auto;
        padding: 16px 16px calc(var(--nav-h) + 26px); }
@@ -258,9 +265,9 @@ body {
 .nav-btn {
   border: none; background: transparent; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  font-size: 0.7rem; color: var(--muted); font-weight: bold; padding: 6px 4px; flex: 1; min-width: 0;
+  font-size: 0.62rem; color: var(--muted); font-weight: bold; padding: 6px 2px; flex: 1; min-width: 0;
 }
-.nav-btn .ic-svg { width: 1.5rem; height: 1.5rem; transition: transform .2s; }
+.nav-btn .ic-svg { width: 1.4rem; height: 1.4rem; transition: transform .2s; }
 .nav-btn.active { color: var(--mid); }
 .nav-btn.active .ic-svg { transform: translateY(-2px) scale(1.15); }
 
