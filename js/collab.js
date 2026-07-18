@@ -42,11 +42,18 @@
   function dims() { var r = canvas.getBoundingClientRect(); return { w: r.width, h: r.height }; }
   function mainW() { var r = canvas.getBoundingClientRect(); return r.width || 320; }
 
+  // points come across the wire FLAT ([x,y,x,y,…]) because Firestore rejects
+  // nested arrays; older data (if any) may be [[x,y],…] — handle both.
+  function pointsOf(p) {
+    if (!p || !p.length) return [];
+    if (Array.isArray(p[0])) return p;
+    var out = []; for (var i = 0; i + 1 < p.length; i += 2) out.push([p[i], p[i + 1]]); return out;
+  }
   function drawOn(c, s, d) {
     c.strokeStyle = s.tool === "marker" ? rgba(s.c, 0.4) : s.tool === "highlighter" ? rgba(s.c, 0.28) : (s.c || "#2f5d55");
     c.lineWidth = (s.w || 6) * (d.scale || 1);
     c.beginPath();
-    (s.p || []).forEach(function (pt, i) {
+    pointsOf(s.p).forEach(function (pt, i) {
       var x = pt[0] * d.w, y = pt[1] * d.h;
       if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
     });
@@ -78,7 +85,8 @@
   function end() {
     if (!drawing) return; drawing = false;
     if (cur.length > 1 && window.Cloud) {
-      Cloud.addStroke({ c: style.color, w: style.size, tool: style.tool, p: cur, cid: cid() }).then(function (okped) {
+      var flat = []; for (var i = 0; i < cur.length; i++) { flat.push(cur[i][0], cur[i][1]); } // Firestore has no nested arrays
+      Cloud.addStroke({ c: style.color, w: style.size, tool: style.tool, p: flat, cid: cid() }).then(function (okped) {
         if (!okped && !syncWarned) { syncWarned = true; toast("⚠️ Can't sync: " + (window.Cloud.lastError || "publish the 'board' Firestore rule")); }
       });
     }
@@ -167,11 +175,14 @@
     unsubLike = Cloud.watchLike(BOARD_LIKE_ID, function (n) { var el = $("#boardLikeN"); if (el) el.textContent = n; });
     var sid = store.get("sessionId", "s" + Math.random().toString(36).slice(2));
     presStop = Cloud.startPresence(sid);
-    var prevPres = 0;
+    var peakPres = 1, lastJoinToast = 0;
     unsubPres = Cloud.watchPresence(function (n) {
       var el = $("#boardOnlineN"); if (el) el.textContent = n || 1;
-      if (prevPres && n > prevPres) toast("A friend joined! 🎨 Draw together!");
-      prevPres = n;
+      // only celebrate a genuine new high, and at most once every 30s (the count
+      // naturally wobbles as sessions time out and re-check in)
+      var now = Date.now();
+      if (n > peakPres && now - lastJoinToast > 30000) { toast("A friend joined! 🎨 Draw together!"); lastJoinToast = now; }
+      if (n > peakPres) peakPres = n;
     });
   }
   function unsubscribe() {
@@ -218,6 +229,7 @@
     canvas.addEventListener("pointercancel", end);
     $("#boardClear").addEventListener("click", async function () {
       if (!confirm("Clear the shared board for everyone?")) return;
+      setup(); allStrokes = []; seen = {}; clearOthers();   // clear my screen right away
       var ok = await Cloud.clearBoard();
       toast(ok ? "Board cleared" : "Couldn't clear: " + (window.Cloud.lastError || "publish the 'board' rule"));
     });
@@ -333,6 +345,8 @@
   }
   window.addEventListener("doodle-reflow", refit);
   var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(refit, 250); });
+  // when the drawing timer runs out, jump straight to everyone's gallery
+  window.addEventListener("doodle-timeup", function () { if (active) showGallery(); });
 
   document.addEventListener("DOMContentLoaded", function () {
     var liveBtn = $("#liveModeBtn");

@@ -131,8 +131,12 @@
     async clearBoard() {
       if (!(await ok()) || !db) return false;
       try {
-        var snap = await F.getDocs(F.collection(db, "board"));
-        await Promise.all(snap.docs.map(function (d) { return F.deleteDoc(F.doc(db, "board", d.id)); }));
+        // delete in chunks so a big backlog doesn't fire thousands of parallel deletes
+        for (var i = 0; i < 100; i++) {
+          var snap = await F.getDocs(F.query(F.collection(db, "board"), F.limit(300)));
+          if (snap.empty) break;
+          await Promise.all(snap.docs.map(function (d) { return F.deleteDoc(F.doc(db, "board", d.id)); }));
+        }
         return true;
       } catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] board clear:", e.message || e); return false; }
     },
