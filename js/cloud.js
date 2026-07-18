@@ -158,10 +158,22 @@
     async listSubmissions() {
       if (!(await ok()) || !db) return null;
       try {
-        var q = F.query(F.collection(db, "submissions"), F.orderBy("created", "desc"), F.limit(30));
+        var q = F.query(F.collection(db, "submissions"), F.orderBy("created", "desc"), F.limit(60));
         var snap = await F.getDocs(q);
         return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img }; });
       } catch (e) { console.warn("[cloud] submissions load:", e.message || e); return null; }
+    },
+    // live-updating list of all submitted drawings (newest first)
+    watchSubmissions(cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var q = F.query(F.collection(db, "submissions"), F.orderBy("created", "desc"), F.limit(60));
+        unsub = F.onSnapshot(q, function (snap) {
+          cb(snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img }; }));
+        }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
     },
 
     /* ---------- profile (owner writes) ---------- */

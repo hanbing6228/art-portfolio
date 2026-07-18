@@ -272,22 +272,33 @@
     showGallery();
   }
 
-  /* ---------- gallery view: everyone's submitted drawings + voting ---------- */
+  /* ---------- gallery view: all submitted drawings (live) + voting ---------- */
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
-  async function showGallery() {
+  var gallerySub = null, galleryCounts = {};
+  function ensureGalleryOverlay() {
+    var ov = document.getElementById("boardGalleryOverlay");
+    if (ov) return ov;
+    ov = document.createElement("div"); ov.id = "boardGalleryOverlay"; ov.className = "board-gallery"; ov.hidden = true;
+    ov.innerHTML =
+      '<div class="bg-inner"><div class="bg-head"><b>Everyone’s drawings</b>' +
+      '<button class="bg-close" aria-label="Close">' + ((window.ICONS && ICONS.close) || "x") + "</button></div>" +
+      '<div class="bg-body"></div>' +
+      '<div class="bg-react">' + STICKERS.map(function (s) { return '<button class="sticker" data-s="' + s + '">' + s + "</button>"; }).join("") + "</div>" +
+      '<p class="page-sub" style="text-align:center;margin:0 0 14px">Tap a ♥ to vote • tap an emoji to cheer!</p>' +
+      "</div>";
+    document.body.appendChild(ov);
+    function closeGallery() { ov.hidden = true; if (gallerySub) { gallerySub(); gallerySub = null; } }
+    ov.addEventListener("click", function (e) { if (e.target === ov || (e.target.closest && e.target.closest(".bg-close"))) closeGallery(); });
+    ov.querySelectorAll(".bg-react .sticker").forEach(function (btn) {
+      btn.addEventListener("click", function (e) { e.stopPropagation(); if (window.Cloud) Cloud.sendReaction(btn.dataset.s); });
+    });
+    return ov;
+  }
+  function renderGallery(ov, subs) {
     var items = [];
     try { if (canvas) items.push({ name: "You (now)", url: canvas.toDataURL() }); } catch (e) {}
-    var counts = {};
-    if (window.Cloud && Cloud.listSubmissions) {
-      var subs = await Cloud.listSubmissions();
-      (subs || []).forEach(function (s) { if (s.img) items.push({ name: s.name || "Friend", url: s.img, id: s.id }); });
-      if (Cloud.getLikeCounts) { try { counts = (await Cloud.getLikeCounts()) || {}; } catch (e) {} }
-    }
-    Object.keys(others).forEach(function (k) {
-      try { items.push({ name: "Friend (live)", url: others[k].win.querySelector(".peer-canvas").toDataURL() }); } catch (e) {}
-    });
-
-    // work out who's winning / who needs cheering, among submitted drawings
+    (subs || []).forEach(function (s) { if (s.img) items.push({ name: s.name || "Friend", url: s.img, id: s.id }); });
+    var counts = galleryCounts;
     var voted = items.filter(function (it) { return it.id; }).map(function (it) { return { name: it.name, n: counts["sub_" + it.id] || 0 }; });
     var summary = "";
     if (voted.length >= 2) {
@@ -295,17 +306,8 @@
       var least = voted.slice().sort(function (a, b) { return a.n - b.n; })[0];
       summary = '<p class="bg-summary">🏆 Most cheers: <b>' + esc(most.name) + "</b> (" + most.n + ") &nbsp;·&nbsp; 🤍 Needs love: <b>" + esc(least.name) + "</b> (" + least.n + ")</p>";
     }
-
-    var ov = document.getElementById("boardGalleryOverlay");
-    if (!ov) {
-      ov = document.createElement("div"); ov.id = "boardGalleryOverlay"; ov.className = "board-gallery"; ov.hidden = true;
-      document.body.appendChild(ov);
-      ov.addEventListener("click", function (e) { if (e.target === ov || (e.target.closest && e.target.closest(".bg-close"))) ov.hidden = true; });
-    }
-    ov.innerHTML =
-      '<div class="bg-inner"><div class="bg-head"><b>Everyone’s drawings</b>' +
-      '<button class="bg-close" aria-label="Close">' + ((window.ICONS && ICONS.close) || "x") + "</button></div>" +
-      summary +
+    var body = ov.querySelector(".bg-body");
+    body.innerHTML = summary +
       '<div class="bg-grid">' +
       (items.length ? items.map(function (it) {
         var likeUI = it.id
@@ -314,23 +316,29 @@
         return '<figure class="bg-item"><img src="' + it.url + '" alt="" /><figcaption>' + esc(it.name) + "</figcaption>" + likeUI + "</figure>";
       }).join("")
                     : '<p class="gb-empty">No drawings yet — tap “Done — submit” after you draw!</p>') +
-      "</div>" +
-      '<div class="bg-react">' + STICKERS.map(function (s) { return '<button class="sticker" data-s="' + s + '">' + s + "</button>"; }).join("") + "</div>" +
-      '<p class="page-sub" style="text-align:center;margin:0 0 14px">Tap a ♥ to vote • tap an emoji to cheer!</p>' +
       "</div>";
-    ov.querySelectorAll(".bg-react .sticker").forEach(function (btn) {
-      btn.addEventListener("click", function (e) { e.stopPropagation(); if (window.Cloud) Cloud.sendReaction(btn.dataset.s); });
-    });
-    ov.querySelectorAll(".bg-like").forEach(function (btn) {
+    body.querySelectorAll(".bg-like").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (!window.Cloud) return;
         Cloud.like("sub_" + btn.dataset.id);
+        galleryCounts["sub_" + btn.dataset.id] = (galleryCounts["sub_" + btn.dataset.id] || 0) + 1;
         var span = btn.querySelector("span"); span.textContent = (+span.textContent || 0) + 1;
         btn.classList.add("liked");
       });
     });
+  }
+  async function showGallery() {
+    var ov = ensureGalleryOverlay();
     ov.hidden = false;
+    if (window.Cloud && Cloud.getLikeCounts) { try { galleryCounts = (await Cloud.getLikeCounts()) || {}; } catch (e) {} }
+    renderGallery(ov, []); // instant: show my current board while history loads
+    if (window.Cloud && Cloud.watchSubmissions) {
+      if (gallerySub) gallerySub();
+      gallerySub = Cloud.watchSubmissions(function (subs) { if (!ov.hidden) renderGallery(ov, subs); });
+    } else if (window.Cloud && Cloud.listSubmissions) {
+      var subs = await Cloud.listSubmissions(); renderGallery(ov, subs);
+    }
   }
 
   // re-fit the board when it changes size (e.g. entering/leaving fullscreen).
