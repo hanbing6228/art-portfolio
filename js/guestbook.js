@@ -99,6 +99,7 @@
       '<div class="chat-drawer-panel">' +
       '<div class="admin-head"><b>Live chat</b>' +
       '<span class="chat-online" id="cdOnline" hidden><span class="online-dot"></span> <span id="cdOnlineN">1</span> online</span>' +
+      '<button class="icon-btn" id="cdExpand" aria-label="Fullscreen">' + (window.ICONS ? ICONS.expand : "") + "</button>" +
       '<button class="icon-btn" id="cdClose">' + (window.ICONS ? ICONS.close : "x") + "</button></div>" +
       '<div id="chatDrawerList" class="guestbook-list chat"></div>' +
       '<div class="guestbook-form">' +
@@ -111,6 +112,12 @@
     fab.addEventListener("click", function () { drawer.hidden = false; renderAll(); });
     drawer.addEventListener("click", function (e) { if (e.target === drawer) drawer.hidden = true; });
     document.getElementById("cdClose").addEventListener("click", function () { drawer.hidden = true; });
+    var panel = drawer.querySelector(".chat-drawer-panel");
+    document.getElementById("cdExpand").addEventListener("click", function () {
+      var full = panel.classList.toggle("full");
+      this.innerHTML = (window.ICONS && ICONS[full ? "collapse" : "expand"]) || "";
+      renderAll();
+    });
     document.getElementById("cdSend").addEventListener("click", function () { post(document.getElementById("cdName"), document.getElementById("cdMsg")); });
     document.getElementById("cdMsg").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); post(document.getElementById("cdName"), document.getElementById("cdMsg")); } });
   }

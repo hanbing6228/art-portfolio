@@ -164,23 +164,47 @@
     if (!url) { toast("Paste a link first"); return; }
     if (isImageUrl(url)) { previewImg = url; var pv = document.getElementById("favInPrev"); pv.src = url; pv.hidden = false; toast("Image ready!"); return; }
     var btn = document.getElementById("favInFetch"); btn.textContent = "…"; btn.disabled = true;
-    var meta = window.parseLinkPreview ? await window.parseLinkPreview(url) : null;
-    btn.textContent = "Preview"; btn.disabled = false;
     var t = document.getElementById("favInTitle");
+
+    // 1) fast path: link-preview service (og:image)
+    var meta = window.parseLinkPreview ? await window.parseLinkPreview(url) : null;
     if (meta && meta.title && !t.value) t.value = meta.title;
-    if (meta && meta.image) {
-      previewImg = meta.image;
-      var pv2 = document.getElementById("favInPrev"); pv2.src = meta.image; pv2.hidden = false;
-      toast("Preview loaded!");
-      return;
-    }
-    // No og:image (Pinterest & friends block it) — force-grab a screenshot of the page.
+    if (meta && meta.image) { btn.textContent = "Preview"; btn.disabled = false; showPreview(meta.image, "Preview loaded!"); return; }
+
+    // 2) Pinterest & other login-walled pages block the crawler above. Render the
+    //    page with a JS-capable reader and pull the real image out of it.
+    btn.textContent = "Grabbing…";
+    var scraped = await scrapeImage(url);
+    if (scraped) { btn.textContent = "Preview"; btn.disabled = false; showPreview(scraped, "Got the picture!"); return; }
+
+    // 3) last resort: a screenshot of the page
+    btn.textContent = "Preview"; btn.disabled = false;
     var shot = screenshotUrl(url);
-    previewImg = shot;
     var pv3 = document.getElementById("favInPrev");
-    pv3.onerror = function () { pv3.onerror = null; pv3.hidden = true; previewImg = null; toast("Couldn't grab it — try uploading the picture"); };
+    previewImg = shot;
+    pv3.onerror = function () { pv3.onerror = null; pv3.hidden = true; previewImg = null; toast("Couldn't grab it — long-press the pin, “Copy image address”, paste that"); };
     pv3.onload = function () { pv3.onload = null; toast("Grabbed a screenshot!"); };
     pv3.src = shot; pv3.hidden = false;
+  }
+  function showPreview(src, msg) {
+    previewImg = src;
+    var pv = document.getElementById("favInPrev"); pv.onerror = null; pv.onload = null;
+    pv.src = src; pv.hidden = false;
+    if (msg) toast(msg);
+  }
+  // Render the page (JS + redirects) via a reader proxy and extract the main image.
+  // Works well for Pinterest pins, whose image lives on i.pinimg.com.
+  async function scrapeImage(url) {
+    try {
+      var res = await fetch("https://r.jina.ai/" + url, { headers: { "x-return-format": "markdown" } });
+      if (!res.ok) return null;
+      var text = await res.text();
+      var m = text.match(/https?:\/\/i\.pinimg\.com\/[^\s"')\]]+\.(?:jpg|jpeg|png|webp)/i)
+           || text.match(/https?:\/\/[^\s"')\]]+\.(?:jpg|jpeg|png|webp)/i);
+      if (!m) return null;
+      // bump tiny Pinterest thumbnails up to a nicer size
+      return m[0].replace(/\/(?:\d{2,3}x\d{0,3}|\d{2,3}x)\//, "/736x/");
+    } catch (e) { return null; }
   }
   // screenshot-service fallback: renders the page and returns it as an image
   function screenshotUrl(u) { return "https://image.thum.io/get/width/900/noanimate/" + u; }

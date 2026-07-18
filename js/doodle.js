@@ -160,6 +160,53 @@
       try { var link = document.createElement("a"); link.download = "my-doodle.png"; link.href = canvas.toDataURL("image/png"); link.click(); toast("Saved your doodle!"); if (window.Achievements) Achievements.bump("doodlesSaved"); }
       catch (e) { toast("Couldn't save"); }
     });
+    initFullscreen();
+  }
+
+  /* ---------- fullscreen canvas + scalable floating toolbar ---------- */
+  var SCALES = ["", "tb-sm", "tb-lg"]; // normal / smaller / bigger toolbar
+  var scaleIx = 0;
+  function stage() { return $("#doodleStage"); }
+  function isFs() { var s = stage(); return s && s.classList.contains("fs"); }
+  function reflow() { setTimeout(function () { if (ready) setupCanvas(true); }, 70); }
+  function setFsIcon() {
+    var b = $("#doodleFull"); if (!b) return;
+    b.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS[isFs() ? "collapse" : "expand"]) || "") + "</span>";
+    var sc = $("#padScale"); if (sc) sc.hidden = !isFs();
+  }
+  function toggleFs() {
+    var s = stage(); if (!s) return;
+    s.classList.toggle("fs");
+    document.body.classList.toggle("doodle-fs-lock", isFs());
+    closePops();
+    setFsIcon();
+    reflow();
+  }
+  function exitFs() {
+    var s = stage(); if (!s || !isFs()) return;
+    s.classList.remove("fs"); document.body.classList.remove("doodle-fs-lock");
+    setFsIcon(); reflow();
+  }
+  function cycleScale() {
+    var s = stage(); if (!s) return;
+    s.classList.remove("tb-sm", "tb-lg");
+    scaleIx = (scaleIx + 1) % SCALES.length;
+    if (SCALES[scaleIx]) s.classList.add(SCALES[scaleIx]);
+  }
+  function initFullscreen() {
+    var full = $("#doodleFull"); if (full) full.addEventListener("click", toggleFs);
+    var sc = $("#padScale"); if (sc) sc.addEventListener("click", cycleScale);
+    setFsIcon();
+    // switching to "Together" leaves fullscreen and hides the button (live board
+    // manages its own sizing); switching back to solo re-enables it.
+    $$(".mode-btn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var live = b.dataset.mode === "live";
+        var s = stage(); if (s) s.classList.toggle("live-mode", live);
+        if (live) exitFs();
+      });
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isFs()) exitFs(); });
   }
 
   function bindDrawing() {

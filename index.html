@@ -67,10 +67,11 @@
       <h2 class="page-title">Doodle Pad <span class="ic" data-icon="brush"></span></h2>
       <p class="page-sub">Draw solo, or draw together with friends live!</p>
       <div class="doodle-mode" id="doodleMode">
-        <button class="tool-chip mode-btn active" data-mode="solo"><span class="ic" data-icon="doodle"></span> My Doodle</button>
-        <button class="tool-chip mode-btn" data-mode="live" id="liveModeBtn"><span class="ic" data-icon="chat"></span> Draw Together</button>
+        <button class="tool-chip mode-btn active" data-mode="solo"><span class="ic" data-icon="doodle"></span> Solo</button>
+        <button class="tool-chip mode-btn" data-mode="live" id="liveModeBtn"><span class="ic" data-icon="chat"></span> Together</button>
       </div>
 
+      <div class="doodle-stage" id="doodleStage">
       <!-- Procreate-style toolbar: same-type controls grouped, details tucked into popovers -->
       <div class="pad-bar">
         <div class="pad-seg" role="group" aria-label="Brushes">
@@ -93,6 +94,11 @@
             <label class="pad-slider">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
             <label class="pad-slider">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
           </div>
+        </div>
+
+        <div class="pad-seg pad-view">
+          <button class="pad-btn pad-scale" id="padScale" title="Resize toolbar" hidden><span class="ic" data-icon="resize"></span></button>
+          <button class="pad-btn" id="doodleFull" title="Fullscreen"><span class="ic" data-icon="expand"></span></button>
         </div>
       </div>
 
@@ -121,6 +127,7 @@
           <span class="page-sub" style="margin:0">Comment about it in the About chat 💬</span>
         </div>
       </div>
+      </div><!-- /doodle-stage -->
     </section>
 
     <!-- ============ QUIZ ============ -->
