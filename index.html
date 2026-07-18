@@ -70,23 +70,38 @@
         <button class="tool-chip mode-btn active" data-mode="solo"><span class="ic" data-icon="doodle"></span> My Doodle</button>
         <button class="tool-chip mode-btn" data-mode="live" id="liveModeBtn"><span class="ic" data-icon="chat"></span> Draw Together</button>
       </div>
-      <div class="doodle-tools" id="doodleColors"></div>
-      <div class="doodle-tools">
-        <label class="color-input-wrap" title="Pick any color"><input type="color" id="colorPicker" value="#2f5d55" /></label>
-        <button class="tool-chip brush-btn active" data-brush="pen"><span class="ic" data-icon="doodle"></span> Pen</button>
-        <button class="tool-chip brush-btn" data-brush="marker"><span class="ic" data-icon="brush"></span> Marker</button>
-        <button class="tool-chip brush-btn" data-brush="eraser"><span class="ic" data-icon="eraser"></span> Eraser</button>
+
+      <!-- Procreate-style toolbar: same-type controls grouped, details tucked into popovers -->
+      <div class="pad-bar">
+        <div class="pad-seg" role="group" aria-label="Brushes">
+          <button class="pad-btn brush-btn active" data-brush="pen" title="Pen"><span class="ic" data-icon="doodle"></span></button>
+          <button class="pad-btn brush-btn" data-brush="marker" title="Marker"><span class="ic" data-icon="brush"></span></button>
+          <button class="pad-btn brush-btn" data-brush="eraser" title="Eraser"><span class="ic" data-icon="eraser"></span></button>
+        </div>
+
+        <div class="pad-pop-wrap">
+          <button class="pad-swatch" id="padSwatch" title="Color" aria-label="Color"></button>
+          <div class="pad-pop" id="colorPop" hidden>
+            <div id="doodleColors"></div>
+            <label class="color-input-wrap">Custom <input type="color" id="colorPicker" value="#2f5d55" /></label>
+          </div>
+        </div>
+
+        <div class="pad-pop-wrap">
+          <button class="pad-btn" id="padAdjust" title="Size &amp; opacity" aria-label="Size and opacity"><span class="pad-size-preview" id="padSizePreview"></span></button>
+          <div class="pad-pop" id="adjustPop" hidden>
+            <label class="pad-slider">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
+            <label class="pad-slider">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
+          </div>
+        </div>
       </div>
-      <div class="doodle-tools">
-        <label class="tool-chip">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
-        <label class="tool-chip">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
-      </div>
+
       <div id="soloWrap">
-        <div class="doodle-tools">
-          <button class="tool-chip" id="undoBtn"><span class="ic" data-icon="undo"></span></button>
-          <button class="tool-chip" id="redoBtn"><span class="ic" data-icon="redo"></span></button>
-          <button class="tool-chip" id="clearBtn"><span class="ic" data-icon="trash"></span> Clear</button>
-          <button class="tool-chip primary" id="saveDoodle"><span class="ic" data-icon="save"></span> Save</button>
+        <div class="pad-seg pad-actions" role="group" aria-label="Actions">
+          <button class="pad-btn" id="undoBtn" title="Undo"><span class="ic" data-icon="undo"></span></button>
+          <button class="pad-btn" id="redoBtn" title="Redo"><span class="ic" data-icon="redo"></span></button>
+          <button class="pad-btn" id="clearBtn" title="Clear"><span class="ic" data-icon="trash"></span></button>
+          <button class="pad-btn primary" id="saveDoodle" title="Save"><span class="ic" data-icon="save"></span></button>
         </div>
         <canvas id="doodleCanvas" class="doodle-canvas"></canvas>
       </div>

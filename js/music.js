@@ -74,11 +74,17 @@
     if (widget) return;
     widget = document.createElement("div");
     widget.className = "music-widget";
+    // Idle: just a small translucent note tucked in the corner. Tap it to reveal
+    // the play / skip controls (they slide out); tap again to tuck them away.
     widget.innerHTML =
+      '<div class="mus-controls">' +
       '<button class="mus-btn" id="musPrev" aria-label="Previous">' + ic("prev") + "</button>" +
-      '<button class="mus-btn mus-play" id="musPlay" aria-label="Play/pause">' + ic("music") + "</button>" +
-      '<button class="mus-btn" id="musNext" aria-label="Next">' + ic("next") + "</button>";
+      '<button class="mus-btn mus-play" id="musPlay" aria-label="Play/pause">' + ic("play") + "</button>" +
+      '<button class="mus-btn" id="musNext" aria-label="Next">' + ic("next") + "</button>" +
+      "</div>" +
+      '<button class="mus-toggle" id="musToggle" aria-label="Music">' + ic("music") + "</button>";
     document.body.appendChild(widget);
+    widget.querySelector("#musToggle").addEventListener("click", function () { widget.classList.toggle("open"); });
     widget.querySelector("#musPlay").addEventListener("click", toggle);
     widget.querySelector("#musPrev").addEventListener("click", function () { try { player && player.previousVideo(); } catch (e) {} });
     widget.querySelector("#musNext").addEventListener("click", function () { try { player && player.nextVideo(); } catch (e) {} });
@@ -95,7 +101,7 @@
   function updateBtn() {
     if (!widget) return;
     var b = widget.querySelector("#musPlay");
-    if (b) b.innerHTML = playing ? ic("pause") : ic("music");
+    if (b) b.innerHTML = playing ? ic("pause") : ic("play");
     widget.classList.toggle("playing", playing);
   }
 })();

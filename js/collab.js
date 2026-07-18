@@ -144,6 +144,7 @@
       if (!ok) toast("Only the owner can clear: " + (window.Cloud.lastError || ""));
     });
     $("#boardSave").addEventListener("click", function () {
+      if (window.saveCanvasImage) { saveCanvasImage(canvas, "our-drawing.png"); return; }
       try { var a = document.createElement("a"); a.download = "our-drawing.png"; a.href = canvas.toDataURL("image/png"); a.click(); toast("Saved!"); }
       catch (e) { toast("Couldn't save"); }
     });

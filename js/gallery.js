@@ -92,7 +92,8 @@
         '<button class="mini-btn share-one" data-id="' + art.id + '">' + icon("share") + "</button>" +
         "</div></div>";
 
-      card.querySelector(".art-imgwrap").addEventListener("click", function () { openLightbox(art); });
+      // tapping the picture opens a clean fullscreen image (no details)
+      card.querySelector(".art-imgwrap").addEventListener("click", function () { openImageView(art.img); });
       card.querySelector(".art-title").addEventListener("click", function () { openLightbox(art); });
 
       card.querySelector(".like-btn").addEventListener("click", function (e) {

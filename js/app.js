@@ -42,6 +42,55 @@
     }
   };
 
+  /* ---------- Save a canvas as an image (iOS-friendly) ----------
+     On phones (esp. iOS) a plain <a download> often goes nowhere obvious, so
+     we use the Web Share sheet with an image file — that gives a "Save Image"
+     option straight to Photos. Falls back to a normal download elsewhere. */
+  function downloadCanvas(canvas, filename) {
+    try {
+      var link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast("Saved!");
+    } catch (e) { toast("Couldn't save"); }
+  }
+  window.saveCanvasImage = function (canvas, filename) {
+    filename = filename || "drawing.png";
+    try {
+      if (canvas.toBlob && navigator.canShare) {
+        canvas.toBlob(function (blob) {
+          if (!blob) return downloadCanvas(canvas, filename);
+          var file = new File([blob], filename, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file] })
+              .then(function () { toast("Saved!"); })
+              .catch(function (err) { if (err && err.name !== "AbortError") downloadCanvas(canvas, filename); });
+          } else downloadCanvas(canvas, filename);
+        }, "image/png");
+        return;
+      }
+    } catch (e) {}
+    downloadCanvas(canvas, filename);
+  };
+
+  /* ---------- Fullscreen image viewer (image only) ---------- */
+  window.openImageView = function (src) {
+    if (!src) return;
+    var v = document.getElementById("imgView");
+    if (!v) {
+      v = document.createElement("div");
+      v.id = "imgView"; v.className = "img-view"; v.hidden = true;
+      v.innerHTML = '<button class="lightbox-close" id="imgViewClose">' + ((window.ICONS && ICONS.close) || "x") + '</button><img id="imgViewImg" alt="" referrerpolicy="no-referrer" />';
+      document.body.appendChild(v);
+      var close = function () { v.hidden = true; };
+      v.addEventListener("click", function (e) { if (e.target === v || (e.target.closest && e.target.closest("#imgViewClose"))) close(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !v.hidden) close(); });
+    }
+    document.getElementById("imgViewImg").src = src;
+    v.hidden = false;
+  };
+
   /* ---------- Navigation ---------- */
   function goTo(target) {
     $$(".page").forEach((p) => p.classList.toggle("active", p.id === target));

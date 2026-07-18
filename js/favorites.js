@@ -102,29 +102,9 @@
   }
 
   /* ---------- in-app image viewer ---------- */
-  var viewer;
+  // Preview shows just the picture, fullscreen (no title / tags / details).
   function openViewer(f) {
-    if (!viewer) {
-      viewer = document.createElement("div");
-      viewer.className = "fave-viewer";
-      viewer.innerHTML =
-        '<div class="fave-viewer-inner">' +
-        '<button class="lightbox-close" id="favViewClose">' + (window.ICONS ? ICONS.close : "x") + "</button>" +
-        '<img id="favViewImg" alt="" referrerpolicy="no-referrer" />' +
-        '<h3 id="favViewTitle"></h3>' +
-        '<div id="favViewActions" class="lightbox-actions"></div>' +
-        "</div>";
-      document.body.appendChild(viewer);
-      viewer.addEventListener("click", function (e) { if (e.target === viewer) viewer.hidden = true; });
-      document.getElementById("favViewClose").addEventListener("click", function () { viewer.hidden = true; });
-    }
-    document.getElementById("favViewImg").src = f.img || "";
-    document.getElementById("favViewImg").style.display = f.img ? "" : "none";
-    document.getElementById("favViewTitle").textContent = f.title || "";
-    document.getElementById("favViewActions").innerHTML = f.url
-      ? '<a class="tool-chip primary" href="' + escAttr(f.url) + '" target="_blank" rel="noopener">' + icon("link") + " Visit link</a>"
-      : "";
-    viewer.hidden = false;
+    if (f && f.img && window.openImageView) { openImageView(f.img); return; }
   }
 
   /* ---------- owner: floating + button and add modal ---------- */
@@ -186,13 +166,24 @@
     var btn = document.getElementById("favInFetch"); btn.textContent = "…"; btn.disabled = true;
     var meta = window.parseLinkPreview ? await window.parseLinkPreview(url) : null;
     btn.textContent = "Preview"; btn.disabled = false;
-    if (meta) {
-      previewImg = meta.image || null;
-      if (meta.image) { var pv2 = document.getElementById("favInPrev"); pv2.src = meta.image; pv2.hidden = false; }
-      var t = document.getElementById("favInTitle"); if (meta.title && !t.value) t.value = meta.title;
-      toast(meta.image ? "Preview loaded!" : "No image found — you can still add it");
-    } else toast("Couldn't read that link — you can still add it");
+    var t = document.getElementById("favInTitle");
+    if (meta && meta.title && !t.value) t.value = meta.title;
+    if (meta && meta.image) {
+      previewImg = meta.image;
+      var pv2 = document.getElementById("favInPrev"); pv2.src = meta.image; pv2.hidden = false;
+      toast("Preview loaded!");
+      return;
+    }
+    // No og:image (Pinterest & friends block it) — force-grab a screenshot of the page.
+    var shot = screenshotUrl(url);
+    previewImg = shot;
+    var pv3 = document.getElementById("favInPrev");
+    pv3.onerror = function () { pv3.onerror = null; pv3.hidden = true; previewImg = null; toast("Couldn't grab it — try uploading the picture"); };
+    pv3.onload = function () { pv3.onload = null; toast("Grabbed a screenshot!"); };
+    pv3.src = shot; pv3.hidden = false;
   }
+  // screenshot-service fallback: renders the page and returns it as an image
+  function screenshotUrl(u) { return "https://image.thum.io/get/width/900/noanimate/" + u; }
   async function doAdd() {
     var url = document.getElementById("favInUrl").value.trim();
     var img = previewImg || (isImageUrl(url) ? url : "");

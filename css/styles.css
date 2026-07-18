@@ -116,11 +116,11 @@ body {
 .home-cover[hidden] { display: none; }
 .home-cover img { width: 100%; max-height: 210px; object-fit: cover; display: block; background: var(--cream); }
 
-/* left-side floating stack: music on top, chat below */
+/* music: a small translucent note tucked in the top-right corner. Tap it to
+   slide the play / skip controls out; tap again to tuck them away. */
 .music-widget {
-  position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + 60px + env(safe-area-inset-bottom)); z-index: 45;
-  display: flex; align-items: center; gap: 2px; background: var(--card); border: 2px solid var(--light);
-  border-radius: 999px; padding: 4px; box-shadow: var(--shadow);
+  position: fixed; right: 12px; top: calc(64px + env(safe-area-inset-top)); z-index: 46;
+  display: flex; align-items: center; gap: 6px; flex-direction: row;
 }
 .chat-fab {
   position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;
@@ -144,11 +144,28 @@ body {
 .chat-drawer-panel #chatDrawerList { flex: 1; min-height: 160px; margin: 0; padding: 12px 16px; }
 .chat-drawer-panel .guestbook-form { padding: 0 16px 14px; }
 .music-widget[hidden] { display: none; }
-.mus-btn { border: none; background: transparent; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.mus-toggle {
+  border: none; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  background: rgba(244,242,230,0.55); color: var(--deep); box-shadow: var(--shadow);
+  opacity: 0.5; transition: opacity .2s, transform .1s; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.mus-toggle:active { transform: scale(0.92); }
+.music-widget.open .mus-toggle, .music-widget.playing .mus-toggle { opacity: 1; background: var(--card); }
+.mus-toggle .ic-svg { width: 1.35rem; height: 1.35rem; }
+.music-widget.playing .mus-toggle { animation: pulseDot 1.6s infinite; }
+/* controls slide out from the note */
+.mus-controls {
+  display: flex; align-items: center; gap: 2px; overflow: hidden;
+  max-width: 0; opacity: 0; padding: 0; border-radius: 999px;
+  transition: max-width .28s ease, opacity .2s ease, padding .28s ease;
+  background: var(--card); box-shadow: var(--shadow);
+}
+.music-widget.open .mus-controls { max-width: 160px; opacity: 1; padding: 4px; border: 2px solid var(--light); }
+.mus-btn { border: none; background: transparent; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex: 0 0 auto; }
 .mus-btn .ic-svg { width: 1.3rem; height: 1.3rem; }
 .mus-play { background: var(--mid); }
 .mus-play .ic-svg { color: #fff; }
-.music-widget.playing .mus-play { animation: pulseDot 1.4s infinite; }
 
 /* floating + button (owner only) */
 .fav-fab {
@@ -172,6 +189,15 @@ body {
 .fave-viewer-inner .lightbox-actions { justify-content: center; }
 .fave-viewer .lightbox-close { top: -4px; right: -4px; }
 .fave-card.noimg .art-imgwrap { display: none; }
+
+/* fullscreen image-only viewer (gallery + favorites preview) */
+.img-view {
+  position: fixed; inset: 0; z-index: 95; background: rgba(12,20,16,0.94);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-view[hidden] { display: none; }
+.img-view img { max-width: 100vw; max-height: 100vh; object-fit: contain; display: block; }
+.img-view .lightbox-close { position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px; }
 .fave-thumb-ph { width: 44px; height: 44px; border-radius: 8px; background: var(--cream); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .fave-thumb-ph .ic-svg { width: 1.3rem; height: 1.3rem; }
 .fav-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
@@ -279,6 +305,42 @@ body {
 
 /* ===== Doodle ===== */
 .doodle-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+
+/* Procreate-style compact toolbar: same-type controls grouped, details in popovers */
+.pad-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--card); border: 2px solid rgba(90,143,78,0.18); border-radius: 16px;
+  padding: 7px 9px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.pad-seg { display: inline-flex; align-items: center; gap: 2px; background: rgba(96,146,94,0.10); border-radius: 12px; padding: 3px; }
+.pad-actions { margin-bottom: 10px; }
+.pad-btn {
+  border: none; background: transparent; cursor: pointer; width: 38px; height: 38px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--deep); padding: 0; transition: transform .1s;
+}
+.pad-btn:active { transform: scale(0.9); }
+.pad-btn .ic-svg { width: 1.35rem; height: 1.35rem; }
+.pad-btn.active, .pad-btn.brush-btn.active { background: var(--mid); color: #fff; }
+.pad-btn.primary { background: var(--mid); color: #fff; }
+.pad-btn[disabled] { opacity: 0.35; pointer-events: none; }
+.pad-pop-wrap { position: relative; display: inline-flex; }
+.pad-swatch {
+  width: 38px; height: 38px; border-radius: 50%; border: 3px solid #fff; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(47,93,85,0.28); background: #2f5d55; padding: 0;
+}
+.pad-swatch.is-eraser { background: #fff; box-shadow: 0 0 0 2px var(--light), 0 2px 6px rgba(47,93,85,0.28); }
+.pad-size-preview { display: block; width: 16px; height: 16px; border-radius: 50%; background: var(--deep); }
+.pad-pop {
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--card); border: 2px solid var(--light); border-radius: 16px; padding: 12px;
+  box-shadow: var(--shadow); z-index: 40; min-width: 210px;
+}
+.pad-pop[hidden] { display: none; }
+.pad-pop #doodleColors { display: flex; flex-wrap: wrap; gap: 7px; background: rgba(96,146,94,0.08); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+.pad-pop .color-input-wrap { gap: 8px; font-size: 0.82rem; font-weight: bold; color: var(--muted); }
+.pad-slider { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; font-weight: bold; color: var(--muted); margin-bottom: 10px; }
+.pad-slider:last-child { margin-bottom: 0; }
+.pad-slider input[type=range] { flex: 1; }
 
 /* pro-looking range sliders (doodle size/opacity, etc.) */
 input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: var(--light); outline: none; }

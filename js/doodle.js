@@ -104,17 +104,50 @@
       wrap.appendChild(d);
     });
   }
-  function setColor(c) { color = c; if (tool === "eraser") setTool("pen"); var cp = $("#colorPicker"); if (cp) cp.value = c.length === 7 ? c : cp.value; }
+  function setColor(c) { color = c; if (tool === "eraser") setTool("pen"); var cp = $("#colorPicker"); if (cp) cp.value = c.length === 7 ? c : cp.value; paintSwatch(); }
   function setTool(t) {
     tool = t;
     $$(".brush-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.brush === t); });
+    paintSwatch();
+  }
+  // reflect the live color/tool on the compact swatch button
+  function paintSwatch() {
+    var s = $("#padSwatch");
+    if (!s) return;
+    s.style.background = tool === "eraser" ? "#ffffff" : color;
+    s.classList.toggle("is-eraser", tool === "eraser");
+  }
+  function updateSizePreview() {
+    var p = $("#padSizePreview");
+    if (!p) return;
+    var d = Math.max(6, Math.min(26, brush));
+    p.style.width = d + "px"; p.style.height = d + "px";
+  }
+
+  /* popovers: one open at a time, tap outside to close */
+  function closePops() {
+    ["colorPop", "adjustPop"].forEach(function (id) { var p = $("#" + id); if (p) p.hidden = true; });
+    ["padSwatch", "padAdjust"].forEach(function (id) { var b = $("#" + id); if (b) b.classList.remove("active"); });
+  }
+  function togglePop(popId, btnId) {
+    var p = $("#" + popId); if (!p) return;
+    var willOpen = p.hidden;
+    closePops();
+    if (willOpen) { p.hidden = false; var b = $("#" + btnId); if (b) b.classList.add("active"); }
   }
 
   function initControls() {
-    $("#brushSize").addEventListener("input", function (e) { brush = +e.target.value; });
+    $("#brushSize").addEventListener("input", function (e) { brush = +e.target.value; updateSizePreview(); });
     $("#brushOpacity").addEventListener("input", function (e) { opacity = +e.target.value / 100; });
     $("#colorPicker").addEventListener("input", function (e) { setColor(e.target.value); $$(".color-dot").forEach(function (x) { x.classList.remove("active"); }); });
     $$(".brush-btn").forEach(function (b) { b.addEventListener("click", function () { setTool(b.dataset.brush); }); });
+
+    // color / size popovers
+    var sw = $("#padSwatch"); if (sw) sw.addEventListener("click", function (e) { e.stopPropagation(); togglePop("colorPop", "padSwatch"); });
+    var adj = $("#padAdjust"); if (adj) adj.addEventListener("click", function (e) { e.stopPropagation(); togglePop("adjustPop", "padAdjust"); });
+    document.addEventListener("click", function (e) { if (!e.target.closest || !e.target.closest(".pad-pop-wrap")) closePops(); });
+    paintSwatch(); updateSizePreview();
+
     $("#undoBtn").addEventListener("click", undo);
     $("#redoBtn").addEventListener("click", redo);
     $("#clearBtn").addEventListener("click", function () {
@@ -123,6 +156,7 @@
       pushHistory();
     });
     $("#saveDoodle").addEventListener("click", function () {
+      if (window.saveCanvasImage) { saveCanvasImage(canvas, "my-doodle.png"); if (window.Achievements) Achievements.bump("doodlesSaved"); return; }
       try { var link = document.createElement("a"); link.download = "my-doodle.png"; link.href = canvas.toDataURL("image/png"); link.click(); toast("Saved your doodle!"); if (window.Achievements) Achievements.bump("doodlesSaved"); }
       catch (e) { toast("Couldn't save"); }
     });
