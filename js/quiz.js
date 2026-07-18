@@ -15,6 +15,8 @@
       { q: "ORV (Omniscient Reader's Viewpoint) is originally a Korean…", options: ["Web novel", "Movie", "Song", "Comic strip"], correct: 0 },
       { q: "The story Kim Dokja loves is about surviving a world that has…", options: ["Turned into a survival game", "Run out of pizza", "Frozen over only", "Gone to sleep"], correct: 0 },
       { q: "At the start, Kim Dokja's favorite web novel had how many real fans?", options: ["Just one — him", "A million", "Exactly ten", "None"], correct: 0 },
+      { q: "The surname 'Dokja' in Kim Dokja's name actually means…", options: ["Reader", "Hero", "Dragon", "Star"], correct: 0 },
+      { q: "Where does Kim Dokja usually read his favorite novel?", options: ["On his phone commuting", "At the beach", "In a spaceship", "Underwater"], correct: 0 },
       { q: "What is my favorite book right now?", options: ["Omniscient Reader's Viewpoint", "A cookbook", "The phone book", "A map"], correct: 0 },
       { q: "What color theme do I love most?", options: ["Green", "Neon pink", "Grey", "Black"], correct: 0 },
       { q: "Which kind of stories inspire my art the most?", options: ["Manga & webtoons", "Tax forms", "Weather reports", "Menus"], correct: 0 },
@@ -25,6 +27,9 @@
       { q: "The powerful beings who sponsor humans are called…", options: ["Constellations", "Wizards", "Robots", "Coaches"], correct: 0 },
       { q: "Who runs the deadly 'scenarios'?", options: ["Dokkaebi (goblins)", "Teachers", "Chefs", "Librarians"], correct: 0 },
       { q: "The in-story novel is titled 'Three Ways to Survive in a ___'.", options: ["Ruined World", "Big City", "Small Town", "Toy Store"], correct: 0 },
+      { q: "Yoo Joonghyuk mainly fights with a…", options: ["Sword", "Slingshot", "Frying pan", "Paintbrush"], correct: 0 },
+      { q: "The very first scenario traps people inside a…", options: ["Subway car", "Movie theater", "Library", "Bakery"], correct: 0 },
+      { q: "Failing a scenario usually means…", options: ["Death", "A time-out", "Losing points", "Homework"], correct: 0 },
       { q: "Which of these do I make? (pick the real one)", options: ["Printmaking", "Rocket engines", "Skyscrapers", "Submarines"], correct: 0 },
     ],
     hard: [
@@ -34,6 +39,9 @@
       { q: "How many times had Yoo Joonghyuk regressed (his famous count)?", options: ["1863rd life", "3rd life", "50th life", "999th life"], correct: 0 },
       { q: "Kim Dokja's greatest 'weapon' throughout the story is his…", options: ["Knowledge of the plot", "Super strength", "Invisibility", "Fire magic"], correct: 0 },
       { q: "ORV was written by the author duo known as…", options: ["sing-Shong", "tls123 only", "Anonymous", "A single dokkaebi"], correct: 0 },
+      { q: "The whole system that broadcasts the scenarios is called…", options: ["Star Stream", "Sky Net", "The Grid", "Cloud Nine"], correct: 0 },
+      { q: "Within the web novel, Yoo Joonghyuk is the story's…", options: ["Protagonist", "Narrator", "Villain", "Sidekick"], correct: 0 },
+      { q: "Fans often shorten the in-story novel's long title to…", options: ["TWSA", "ORV2", "LOTR", "TFIOS"], correct: 0 },
     ],
   };
 
@@ -46,6 +54,15 @@
   var ROUND_SIZE = 6;   // questions per game
   var MAX_LIVES = 3;
   var BASE_POINTS = 60; // per correct answer (before speed & combo)
+
+  // Jump to the badges (now inside the About page) and scroll them into view.
+  function gotoBadges() {
+    goTo("about");
+    setTimeout(function () {
+      var el = document.getElementById("achvAnchor");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 90);
+  }
 
   // ---- game state ----
   var state = null;
@@ -89,7 +106,7 @@
       btn.addEventListener("click", function () { startGame(btn.dataset.level); });
     });
     var goAchv = $("#goAchv");
-    if (goAchv) goAchv.addEventListener("click", function () { goTo("achievements"); });
+    if (goAchv) goAchv.addEventListener("click", gotoBadges);
   }
 
   /* ---------- Game ---------- */
@@ -304,7 +321,7 @@
     // "View all badges" button is created dynamically in results
     document.addEventListener("click", function (e) {
       var t = e.target.closest && e.target.closest("#resAchv");
-      if (t) goTo("achievements");
+      if (t) gotoBadges();
     });
     // leaving the quiz page stops any running timer
     document.addEventListener("pagechange", function (e) {

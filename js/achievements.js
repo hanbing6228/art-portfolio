@@ -210,7 +210,7 @@
   }
 
   function refreshIfVisible() {
-    var page = document.getElementById("achievements");
+    var page = document.getElementById("about");
     if (page && page.classList.contains("active")) render();
   }
 
@@ -227,7 +227,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     render();
     document.addEventListener("pagechange", function (e) {
-      if (e.detail === "achievements") render();
+      if (e.detail === "about") render();
     });
   });
 })();
