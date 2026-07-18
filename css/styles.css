@@ -279,6 +279,23 @@ body {
 }
 .gb-input:focus { outline: none; border-color: var(--mid); }
 .guestbook-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* live chat */
+.chat-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-online { font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 5px; font-weight: bold; }
+.chat-online[hidden] { display: none; }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: #54b268; box-shadow: 0 0 0 3px rgba(84,178,104,0.22); display: inline-block; animation: pulseDot 1.8s infinite; }
+@keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.guestbook-list.chat { max-height: 320px; overflow-y: auto; margin: 10px 0; padding-right: 4px; }
+.chat-input-row { display: flex; gap: 8px; align-items: center; }
+.chat-input-row .gb-input { flex: 1; }
+.reaction-bar { display: flex; gap: 8px; margin: 4px 0 10px; }
+.react-btn { border: 2px solid var(--light); background: var(--card); border-radius: 999px; width: 40px; height: 40px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: transform .1s; }
+.react-btn .ic-svg { width: 1.35rem; height: 1.35rem; }
+.react-btn:active { transform: scale(1.25); }
+.reaction-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.float-react { position: absolute; bottom: 90px; }
+.float-react .ic-svg { width: 2.3rem; height: 2.3rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
 .gb-item { background: var(--cream); border-radius: 12px; padding: 10px 12px; border-left: 4px solid var(--mid); }
 .gb-item .gb-who { font-weight: bold; color: var(--deep); font-size: 0.9rem; }
 .gb-item .gb-body { font-size: 0.92rem; margin-top: 2px; }

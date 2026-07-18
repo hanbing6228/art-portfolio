@@ -95,14 +95,20 @@
       </div>
       <div id="achvContent"></div>
 
-      <div class="card">
-        <h3 class="card-h">Leave me a message <span class="ic" data-icon="send"></span></h3>
+      <div class="card chat-card">
+        <div class="chat-head">
+          <h3 class="card-h">Live chat <span class="ic" data-icon="chat"></span></h3>
+          <span class="chat-online" id="chatOnline" hidden><span class="online-dot"></span> <span id="chatOnlineN">1</span> online</span>
+        </div>
+        <div id="guestbookList" class="guestbook-list chat"></div>
+        <div class="reaction-bar" id="reactionBar"></div>
         <div class="guestbook-form">
           <input id="gbName" class="gb-input" maxlength="24" placeholder="Your name" />
-          <textarea id="gbMsg" class="gb-input" maxlength="200" placeholder="Say something nice about my art!"></textarea>
-          <button id="gbSend" class="tool-chip primary"><span class="ic" data-icon="send"></span> Send</button>
+          <div class="chat-input-row">
+            <input id="gbMsg" class="gb-input" maxlength="200" placeholder="Type a message…" />
+            <button id="gbSend" class="tool-chip primary"><span class="ic" data-icon="send"></span></button>
+          </div>
         </div>
-        <div id="guestbookList" class="guestbook-list"></div>
       </div>
       <div class="share-row">
         <button class="tool-chip primary" id="shareSite"><span class="ic" data-icon="share"></span> Share my portfolio</button>

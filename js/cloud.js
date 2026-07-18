@@ -37,6 +37,67 @@
       catch (e) { console.warn("[cloud] guestbook add:", e.message || e); return false; }
     },
 
+    /* ---------- live chat (real-time) ---------- */
+    // cb receives the full message list (oldest -> newest) on every change.
+    watchChat(cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var q = F.query(F.collection(db, "guestbook"), F.orderBy("created", "asc"), F.limit(300));
+        unsub = F.onSnapshot(q, function (snap) {
+          cb(snap.docs.map(function (d) { var x = d.data(); return { name: x.name, message: x.message, created_at: x.created && x.created.toMillis ? x.created.toMillis() : Date.now() }; }));
+        }, function (e) { console.warn("[cloud] chat watch:", e.message || e); });
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+
+    /* ---------- presence ("N online") ---------- */
+    startPresence(sessionId) {
+      var timer = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var beat = function () { F.setDoc(F.doc(db, "presence", sessionId), { seen: F.serverTimestamp() }, { merge: true }).catch(function () {}); };
+        beat();
+        timer = setInterval(function () { if (document.visibilityState !== "hidden") beat(); }, 20000);
+      });
+      return function () { cancelled = true; if (timer) clearInterval(timer); };
+    },
+    watchPresence(cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        unsub = F.onSnapshot(F.collection(db, "presence"), function (snap) {
+          var now = Date.now(), n = 0;
+          snap.forEach(function (d) { var s = d.data().seen; if (s && s.toMillis && now - s.toMillis() < 45000) n++; });
+          cb(n);
+        }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+
+    /* ---------- live reactions (floating icons) ---------- */
+    async sendReaction(icon) {
+      if (!(await ok()) || !db) return;
+      try { await F.addDoc(F.collection(db, "reactions"), { icon: icon, created: F.serverTimestamp() }); }
+      catch (e) { console.warn("[cloud] reaction:", e.message || e); }
+    },
+    watchReactions(cb) {
+      var unsub = null, cancelled = false, started = Date.now();
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var q = F.query(F.collection(db, "reactions"), F.orderBy("created", "desc"), F.limit(20));
+        unsub = F.onSnapshot(q, function (snap) {
+          snap.docChanges().forEach(function (ch) {
+            if (ch.type !== "added") return;
+            var x = ch.doc.data();
+            var t = x.created && x.created.toMillis ? x.created.toMillis() : Date.now();
+            if (t >= started - 3000) cb(x.icon); // only fresh ones
+          });
+        }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+
     /* ---------- likes ---------- */
     async getLikeCounts() {
       if (!(await ok()) || !db) return null;
@@ -136,7 +197,7 @@
       F = {
         collection: fs.collection, doc: fs.doc, addDoc: fs.addDoc, getDoc: fs.getDoc, getDocs: fs.getDocs,
         setDoc: fs.setDoc, deleteDoc: fs.deleteDoc, query: fs.query, orderBy: fs.orderBy, limit: fs.limit,
-        serverTimestamp: fs.serverTimestamp, increment: fs.increment,
+        serverTimestamp: fs.serverTimestamp, increment: fs.increment, onSnapshot: fs.onSnapshot,
       };
       A = {
         signInWithEmailAndPassword: au.signInWithEmailAndPassword, signOut: au.signOut,
