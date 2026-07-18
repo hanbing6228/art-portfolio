@@ -111,6 +111,24 @@ body {
 .fave-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; line-height: 1.35; }
 .fave-link { font-size: 0.72rem; color: var(--mid); font-weight: bold; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
 
+/* home cover banner */
+.home-cover { margin: -16px -16px 8px; overflow: hidden; border-radius: 0 0 20px 20px; box-shadow: var(--shadow); }
+.home-cover[hidden] { display: none; }
+.home-cover img { width: 100%; max-height: 210px; object-fit: cover; display: block; background: var(--cream); }
+
+/* background music widget */
+.music-widget {
+  position: fixed; left: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;
+  display: flex; align-items: center; gap: 2px; background: var(--card); border: 2px solid var(--light);
+  border-radius: 999px; padding: 4px; box-shadow: var(--shadow);
+}
+.music-widget[hidden] { display: none; }
+.mus-btn { border: none; background: transparent; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.mus-btn .ic-svg { width: 1.3rem; height: 1.3rem; }
+.mus-play { background: var(--mid); }
+.mus-play .ic-svg { color: #fff; }
+.music-widget.playing .mus-play { animation: pulseDot 1.4s infinite; }
+
 /* floating + button (owner only) */
 .fav-fab {
   position: fixed; right: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;

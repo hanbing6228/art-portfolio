@@ -83,6 +83,17 @@
         .join("");
     }
 
+    // home cover banner
+    var cover = p.cover != null ? p.cover : (cfg.cover || "");
+    var coverBox = $("#homeCover");
+    if (coverBox) {
+      if (cover) { $("#homeCoverImg").src = cover; coverBox.hidden = false; }
+      else coverBox.hidden = true;
+    }
+
+    // background music
+    if (window.applyMusic) applyMusic(p.music != null ? p.music : (cfg.music || ""));
+
     var about = $("#aboutText");
     about.innerHTML = "";
     (p.about && p.about.length ? p.about : (cfg.about || [])).forEach(function (para) {

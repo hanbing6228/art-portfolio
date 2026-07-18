@@ -44,7 +44,7 @@
   }
 
   /* ---------- overlay DOM ---------- */
-  var overlay, newAvatar = null, newArtImg = null, newFavImg = null, parsedImg = null, parsedArtImg = null, pendingShare = null;
+  var overlay, newAvatar = null, newCover = null, newArtImg = null, newFavImg = null, parsedImg = null, parsedArtImg = null, pendingShare = null;
 
   function buildOverlay() {
     overlay = document.createElement("div");
@@ -106,10 +106,13 @@
       '<div class="admin-section"><h3>Profile</h3>' +
       '<div class="admin-avatar-row"><img id="adAvatarPrev" class="admin-avatar-prev" src="' + avatar + '" alt="avatar" />' +
       '<label class="tool-chip">Change photo<input id="adAvatarFile" type="file" accept="image/*" hidden /></label></div>' +
+      '<label class="tool-chip">Cover image (home banner)<input id="adCoverFile" type="file" accept="image/*" hidden /></label>' +
+      '<img id="adCoverPrev" class="admin-art-prev" ' + (prof.cover ? 'src="' + escAttr(prof.cover) + '"' : "hidden") + ' alt="cover" />' +
       field("adName", "Name", prof.name || cfg.name || "") +
       field("adTagline", "Tagline", prof.tagline != null ? prof.tagline : (cfg.tagline || "")) +
       field("adSiteTitle", "Site title (top bar)", prof.siteTitle || cfg.siteTitle || "") +
       field("adGalleryTitle", "Gallery heading", prof.galleryTitle || cfg.galleryTitle || "") +
+      field("adMusic", "Background music (YouTube playlist link)", prof.music != null ? prof.music : (cfg.music || "")) +
       field("adObsT", "Obsessed with (title)", prof.obsessionTitle != null ? prof.obsessionTitle : (obs.title || "")) +
       field("adObsN", "Obsessed with (note)", prof.obsessionNote != null ? prof.obsessionNote : (obs.note || "")) +
       area("adAbout", "About me (one line per paragraph)", (prof.about && prof.about.length ? prof.about : (cfg.about || [])).join("\n")) +
@@ -157,6 +160,12 @@
       var f = e.target.files[0]; if (!f) return;
       newAvatar = await resizeToDataURL(f, 400, 0.85);
       $("#adAvatarPrev").src = newAvatar;
+    });
+    // cover picker
+    $("#adCoverFile").addEventListener("change", async function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      newCover = await resizeToDataURL(f, 1200, 0.82);
+      var pv = $("#adCoverPrev"); pv.src = newCover; pv.hidden = false;
     });
     // artwork picker (upload or paste a link)
     parsedArtImg = null;
@@ -253,11 +262,16 @@
       about: lines($("#adAbout").value),
       funFacts: lines($("#adFacts").value),
       badges: lines($("#adBadges").value),
+      music: $("#adMusic").value.trim(),
     };
     if (newAvatar) prof.avatar = newAvatar;
+    if (newCover) prof.cover = newCover;
     var ok = await Cloud.saveProfile(prof);
     btn.textContent = "Save profile";
-    if (ok) { if (window.applyProfile) applyProfile(Object.assign({ avatar: $("#adAvatarPrev").src }, prof)); toast("Profile saved!"); }
+    if (ok) {
+      if (window.applyProfile) applyProfile(Object.assign({ avatar: $("#adAvatarPrev").src, cover: ($("#adCoverPrev").hidden ? "" : $("#adCoverPrev").src) }, prof));
+      toast("Profile saved!");
+    }
     else toast("Save failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }
 

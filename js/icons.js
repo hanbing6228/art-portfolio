@@ -193,6 +193,10 @@
     ),
     star: svg('<path d="M12 3l2.5 6.1L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.5-.5Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>'),
     plus: svg('<path d="M12 5v14M5 12h14" stroke-width="2.4"/>'),
+    music: svg('<path d="M9 17V5l10-2v12" fill="none"/><ellipse cx="6.2" cy="17" rx="3" ry="2.6" fill="' + C.tan + '"/><ellipse cx="16.2" cy="15" rx="3" ry="2.6" fill="' + C.sage + '"/>'),
+    pause: svg('<rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="' + C.teal + '"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="' + C.teal + '"/>'),
+    next: svg('<path d="M6 5l9 7-9 7Z" fill="' + C.sage + '" stroke="' + C.teal + '"/><path d="M17 5v14" stroke="' + C.teal + '"/>'),
+    prev: svg('<path d="M18 5l-9 7 9 7Z" fill="' + C.sage + '" stroke="' + C.teal + '"/><path d="M7 5v14" stroke="' + C.teal + '"/>'),
     link: svg(
       '<path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5" stroke="' + C.teal + '"/>' +
       '<path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.5-1.5" stroke="' + C.teal + '"/>'

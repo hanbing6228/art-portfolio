@@ -15,6 +15,8 @@ window.CONFIG = {
   siteTitle: "Linrose",            // shown in the top bar
   galleryTitle: "Linrose",         // heading above your artwork wall
   badges: ["Age 12", "Manga Lover", "Green Fan"], // little chips on the home page
+  cover: "",                       // home banner image (set in the Manage panel)
+  music: "",                       // YouTube playlist/video link for background music
 
   // --- Your avatar picture ---
   // Put your own photo in  assets/img/  and change this to it,
