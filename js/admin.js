@@ -8,18 +8,98 @@
 (function () {
   var cloudOn = !!(window.Cloud && Cloud.enabled);
 
+  var gIsOwner = false, gOnGallery = false;
+
   document.addEventListener("DOMContentLoaded", function () {
     var gear = $("#adminBtn");
     if (!gear) return;
     if (!cloudOn) { gear.style.display = "none"; return; }
     gear.addEventListener("click", openAdmin);
     buildOverlay();
-    // reflect signed-in state on the gear
+    buildGalleryAdd();
+    gOnGallery = !!(document.getElementById("gallery") && document.getElementById("gallery").classList.contains("active"));
+    // reflect signed-in state on the gear + the Gallery add button
     Cloud.onAuth(function (user) {
       gear.classList.toggle("owner-on", !!user);
+      gIsOwner = !!user; updateGalleryFab();
     });
+    document.addEventListener("pagechange", function (e) { gOnGallery = e.detail === "gallery"; updateGalleryFab(); });
     // (shared links are handled by the Favorites page's ➕ dialog)
   });
+
+  /* ---------- Gallery page: owner "+" to add artwork ---------- */
+  var gFab, gModal, gArtUpload = null, gArtParsed = null;
+  function updateGalleryFab() { if (gFab) gFab.hidden = !(gIsOwner && gOnGallery); }
+  function buildGalleryAdd() {
+    gFab = document.createElement("button");
+    gFab.id = "galleryFab"; gFab.className = "fav-fab"; gFab.hidden = true;
+    gFab.setAttribute("aria-label", "Add artwork");
+    gFab.innerHTML = iconRaw("plus");
+    document.body.appendChild(gFab);
+    gFab.addEventListener("click", openArtModal);
+  }
+  function buildArtModal() {
+    if (gModal) return;
+    gModal = document.createElement("div");
+    gModal.className = "admin-overlay"; gModal.hidden = true;
+    gModal.innerHTML =
+      '<div class="admin-panel"><div class="admin-head"><b>Add artwork</b>' +
+      '<button class="icon-btn" id="gaClose">' + iconRaw("close") + "</button></div>" +
+      '<div style="padding:16px"><div class="admin-section">' +
+      '<label class="tool-chip">Choose photo<input id="gaFile" type="file" accept="image/*" hidden /></label>' +
+      '<div class="fav-add-row" style="margin-top:8px"><input id="gaUrl" class="gb-input" placeholder="…or paste an image / page link" />' +
+      '<button class="tool-chip" id="gaFetch">Preview</button></div>' +
+      '<img id="gaPrev" class="admin-art-prev" hidden alt="preview" />' +
+      field("gaTitle", "Title", "") +
+      field("gaDesc", "Description", "") +
+      field("gaTags", "Tags (comma separated)", "") +
+      '<label class="admin-label">Shape<select id="gaAspect" class="gb-input"><option value="square">Square</option><option value="tall">Tall</option><option value="wide">Wide</option></select></label>' +
+      '<button class="tool-chip primary" id="gaAdd">Add artwork</button>' +
+      "</div></div></div>";
+    document.body.appendChild(gModal);
+    gModal.addEventListener("click", function (e) { if (e.target === gModal) gModal.hidden = true; });
+    $("#gaClose").addEventListener("click", function () { gModal.hidden = true; });
+    $("#gaFile").addEventListener("change", async function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      gArtUpload = await resizeToDataURL(f, 1000, 0.82); gArtParsed = null;
+      var pv = $("#gaPrev"); pv.src = gArtUpload; pv.hidden = false;
+    });
+    $("#gaFetch").addEventListener("click", async function () {
+      var url = $("#gaUrl").value.trim(); if (!url) { toast("Paste a link first"); return; }
+      var btn = $("#gaFetch"); btn.textContent = "…"; btn.disabled = true;
+      var img = "";
+      if (/\.(jpe?g|png|gif|webp|avif|bmp)(\?|#|$)/i.test(url)) img = url;
+      else {
+        try { var r = await fetch("/api/grab?url=" + encodeURIComponent(url)); if (r.ok) { var j = await r.json(); if (j.image) img = j.image; if (j.title && !$("#gaTitle").value) $("#gaTitle").value = j.title; } } catch (_) {}
+        if (!img) { var meta = await parseLink(url); if (meta && meta.image) img = meta.image; if (meta && meta.title && !$("#gaTitle").value) $("#gaTitle").value = meta.title; }
+      }
+      btn.textContent = "Preview"; btn.disabled = false;
+      if (img) { gArtParsed = img; gArtUpload = null; var pv = $("#gaPrev"); pv.src = img; pv.hidden = false; toast("Image ready!"); }
+      else toast("Couldn't get an image — upload one instead");
+    });
+    $("#gaAdd").addEventListener("click", async function () {
+      var img = gArtUpload || gArtParsed;
+      if (!img) { toast("Add a photo or paste a link first"); return; }
+      var btn = $("#gaAdd"); btn.textContent = "Adding…"; btn.disabled = true;
+      var art = {
+        title: $("#gaTitle").value.trim() || "Untitled",
+        desc: $("#gaDesc").value.trim(),
+        tags: $("#gaTags").value.split(",").map(function (x) { return x.trim(); }).filter(Boolean),
+        aspect: $("#gaAspect").value, img: img,
+      };
+      var id = await Cloud.addArtwork(art);
+      btn.textContent = "Add artwork"; btn.disabled = false;
+      if (id) { toast("Artwork added!"); gModal.hidden = true; await refreshArtworks(); }
+      else toast("Add failed: " + (window.Cloud.lastError || "check Firestore rules"));
+    });
+  }
+  function openArtModal() {
+    buildArtModal();
+    gArtUpload = null; gArtParsed = null;
+    ["gaTitle", "gaDesc", "gaTags", "gaUrl"].forEach(function (id) { var el = $("#" + id); if (el) el.value = ""; });
+    $("#gaPrev").hidden = true;
+    gModal.hidden = false;
+  }
 
   /* ---------- image resize ---------- */
   function resizeToDataURL(file, maxDim, quality) {
@@ -120,38 +200,14 @@
       area("adBadges", "Home badges (one per line)", (prof.badges && prof.badges.length ? prof.badges : (cfg.badges || [])).join("\n")) +
       '<button class="tool-chip primary" id="adSaveProfile">Save profile</button>' +
       "</div>" +
-      // ---- add artwork ----
-      '<div class="admin-section"><h3>Add artwork</h3>' +
-      '<label class="tool-chip">Choose photo<input id="adArtFile" type="file" accept="image/*" hidden /></label>' +
-      '<div class="fav-add-row" style="margin-top:8px"><input id="adArtUrl" class="gb-input" placeholder="…or paste an image / page link" />' +
-      '<button class="tool-chip" id="adArtFetch">Preview</button></div>' +
-      '<img id="adArtPrev" class="admin-art-prev" hidden alt="preview" />' +
-      field("adArtTitle", "Title", "") +
-      field("adArtDesc", "Description", "") +
-      field("adArtTags", "Tags (comma separated)", "") +
-      '<label class="admin-label">Shape' +
-      '<select id="adArtAspect" class="gb-input"><option value="square">Square</option><option value="tall">Tall</option><option value="wide">Wide</option></select></label>' +
-      '<button class="tool-chip primary" id="adAddArt">Add artwork</button>' +
-      "</div>" +
-      // ---- existing artworks ----
-      '<div class="admin-section"><h3>My artworks</h3><div id="adArtList" class="admin-art-list"></div></div>' +
-      // ---- add favorite ----
-      '<div class="admin-section"><h3>Add favorite</h3>' +
-      '<p class="page-sub" style="margin:0 0 10px">Paste a link — I\'ll grab the picture automatically.</p>' +
-      '<div class="fav-add-row">' +
-      '<input id="adFavUrl" class="gb-input" placeholder="Paste a link (Pinterest, web, image…)" />' +
-      '<button class="tool-chip" id="adFavFetch">Get preview</button></div>' +
-      '<img id="adFavPrev" class="admin-art-prev" hidden alt="preview" />' +
-      field("adFavTitle", "Title (auto-filled — you can edit)", "") +
-      field("adFavNote", "Note (optional)", "") +
-      '<details class="fav-more"><summary>More options</summary>' +
-      '<label class="tool-chip" style="margin-top:8px">Upload an image instead<input id="adFavFile" type="file" accept="image/*" hidden /></label>' +
-      field("adFavImgUrl", "…or paste an image URL", "") +
-      "</details>" +
-      '<button class="tool-chip primary" id="adAddFav">Add favorite</button>' +
-      "</div>" +
-      // ---- existing favorites ----
-      '<div class="admin-section"><h3>My favorites</h3><div id="adFavList" class="admin-art-list"></div></div>' +
+      // ---- manage artworks (add via the Gallery page's + button) ----
+      '<div class="admin-section"><h3>My artworks</h3>' +
+      '<p class="page-sub" style="margin:0 0 10px">Add new artwork with the <b>+</b> button on the Gallery page.</p>' +
+      '<div id="adArtList" class="admin-art-list"></div></div>' +
+      // ---- manage favorites (add via the Faves page's + button) ----
+      '<div class="admin-section"><h3>My favorites</h3>' +
+      '<p class="page-sub" style="margin:0 0 10px">Add new favorites with the <b>+</b> button on the Faves page.</p>' +
+      '<div id="adFavList" class="admin-art-list"></div></div>' +
       // ---- sign out ----
       '<button class="tool-chip" id="adSignOut">Sign out</button>';
 
@@ -167,46 +223,10 @@
       newCover = await resizeToDataURL(f, 1200, 0.82);
       var pv = $("#adCoverPrev"); pv.src = newCover; pv.hidden = false;
     });
-    // artwork picker (upload or paste a link)
-    parsedArtImg = null;
-    $("#adArtFile").addEventListener("change", async function (e) {
-      var f = e.target.files[0]; if (!f) return;
-      newArtImg = await resizeToDataURL(f, 1000, 0.82); parsedArtImg = null;
-      var prev = $("#adArtPrev"); prev.src = newArtImg; prev.hidden = false;
-    });
-    $("#adArtFetch").addEventListener("click", async function () {
-      var url = $("#adArtUrl").value.trim(); if (!url) { toast("Paste a link first"); return; }
-      var btn = $("#adArtFetch"); btn.textContent = "…"; btn.disabled = true;
-      var img = "";
-      if (/\.(jpe?g|png|gif|webp|avif|bmp)(\?|#|$)/i.test(url)) img = url;
-      else { var meta = await parseLink(url); img = meta && meta.image ? meta.image : ""; if (meta && meta.title && !$("#adArtTitle").value) $("#adArtTitle").value = meta.title; }
-      btn.textContent = "Preview"; btn.disabled = false;
-      if (img) { parsedArtImg = img; newArtImg = null; var pv = $("#adArtPrev"); pv.src = img; pv.hidden = false; toast("Image ready!"); }
-      else toast("Couldn't get an image from that link");
-    });
-    // favorite: paste-link preview + optional manual upload
-    parsedImg = null;
-    $("#adFavFetch").addEventListener("click", fetchPreview);
-    $("#adFavFile").addEventListener("change", async function (e) {
-      var f = e.target.files[0]; if (!f) return;
-      newFavImg = await resizeToDataURL(f, 1000, 0.82);
-      var prev = $("#adFavPrev"); prev.src = newFavImg; prev.hidden = false;
-    });
     $("#adSaveProfile").addEventListener("click", saveProfile);
-    $("#adAddArt").addEventListener("click", addArtwork);
-    $("#adAddFav").addEventListener("click", addFavorite);
     $("#adSignOut").addEventListener("click", async function () { await Cloud.signOutOwner(); close(); toast("Signed out"); });
     renderArtList();
     renderFavList();
-
-    // if a link was shared into the app, prefill + auto-fetch its preview
-    if (pendingShare) {
-      var s = pendingShare; pendingShare = null;
-      $("#adFavUrl").value = s.url || "";
-      if (s.title && !$("#adFavTitle").value) $("#adFavTitle").value = s.title;
-      $("#adFavUrl").scrollIntoView({ behavior: "smooth", block: "center" });
-      if (s.url) fetchPreview();
-    }
   }
 
   /* ---------- link preview (paste a URL, auto-grab image + title) ---------- */

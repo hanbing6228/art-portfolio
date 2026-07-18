@@ -1,8 +1,10 @@
-/* ===== Draw Together — shared live board =====
-   A few friends draw on one canvas; finished strokes sync to everyone in
-   real time (Firestore). Snapchat-style sticker reactions float up, and you
-   can like the board. Points are stored normalized (0..1) so it looks right
-   on every screen size. ===== */
+/* ===== Draw Together — live board =====
+   Two ways to play:
+   • "One canvas"    — everyone draws on the same board (finished strokes sync).
+   • "Each their own" — you draw on your own board; each friend's drawing shows
+     in a little floating window you can drag around or shrink to a dot.
+   Points are stored normalized (0..1) so a stroke looks right on every screen.
+   ===== */
 (function () {
   var STICKERS = ["😂", "❤️", "🔥", "😎", "⭐", "🎨", "👑", "💯", "🥳", "😮"];
   var BOARD_LIKE_ID = "liveboard";
@@ -10,9 +12,11 @@
   var canvas, ctx, ready = false, drawing = false;
   var cur = [], lastX = 0, lastY = 0, style = null;
   var clientId = null;
-  var drawnIds = {}, drawnCount = 0;
   var unsubBoard = null, unsubLike = null, unsubPres = null, presStop = null;
   var active = false;
+
+  var boardMode = "shared";        // "shared" | "separate"
+  var allStrokes = [], seen = {}, others = {}; // others: cid -> {win, ctx, w, h}
 
   function cid() {
     if (clientId) return clientId;
@@ -36,18 +40,19 @@
     ready = rect.width > 0;
   }
   function dims() { var r = canvas.getBoundingClientRect(); return { w: r.width, h: r.height }; }
+  function mainW() { var r = canvas.getBoundingClientRect(); return r.width || 320; }
 
-  function drawStroke(s) {
-    var d = dims();
-    ctx.strokeStyle = s.tool === "marker" ? rgba(s.c, 0.4) : s.c;
-    ctx.lineWidth = s.w;
-    ctx.beginPath();
+  function drawOn(c, s, d) {
+    c.strokeStyle = s.tool === "marker" ? rgba(s.c, 0.4) : s.tool === "highlighter" ? rgba(s.c, 0.28) : (s.c || "#2f5d55");
+    c.lineWidth = (s.w || 6) * (d.scale || 1);
+    c.beginPath();
     (s.p || []).forEach(function (pt, i) {
       var x = pt[0] * d.w, y = pt[1] * d.h;
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
     });
-    ctx.stroke();
+    c.stroke();
   }
+  function drawStroke(s) { drawOn(ctx, s, { w: dims().w, h: dims().h, scale: 1 }); }
   function rgba(hex, a) {
     hex = (hex || "#000").replace("#", ""); if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
     var n = parseInt(hex, 16); return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
@@ -59,7 +64,7 @@
     if (!ready) return; e.preventDefault();
     drawing = true; style = (window.getDrawStyle ? getDrawStyle() : { color: "#2f5d55", size: 8, tool: "pen" });
     var p = pos(e); lastX = p.x; lastY = p.y; cur = [norm(p)];
-    ctx.strokeStyle = style.tool === "marker" ? rgba(style.color, 0.4) : style.color;
+    ctx.strokeStyle = style.tool === "marker" ? rgba(style.color, 0.4) : style.tool === "highlighter" ? rgba(style.color, 0.28) : style.color;
     ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = style.size;
     ctx.beginPath(); ctx.arc(p.x, p.y, style.size / 2, 0, Math.PI * 2); ctx.fill();
   }
@@ -78,17 +83,81 @@
   }
   function norm(p) { var d = dims(); return [+(p.x / d.w).toFixed(4), +(p.y / d.h).toFixed(4)]; }
 
+  /* ---------- floating peer windows (separate mode) ---------- */
+  function ensureOther(key) {
+    if (others[key]) return others[key];
+    var W = 152, H = 114, dpr = window.devicePixelRatio || 1;
+    var win = document.createElement("div");
+    win.className = "peer-win";
+    win.innerHTML =
+      '<div class="peer-head"><span class="peer-name">Friend</span>' +
+      '<button class="peer-min" aria-label="Shrink">' + ((window.ICONS && ICONS.minimize) || "–") + "</button></div>" +
+      '<canvas class="peer-canvas"></canvas>';
+    document.body.appendChild(win);
+    var n = Object.keys(others).length;
+    win.style.top = (92 + n * 130) + "px"; win.style.right = "12px";
+    var cv = win.querySelector(".peer-canvas");
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    var c2 = cv.getContext("2d"); c2.scale(dpr, dpr);
+    c2.fillStyle = "#fff"; c2.fillRect(0, 0, W, H); c2.lineCap = "round"; c2.lineJoin = "round";
+    var o = { win: win, ctx: c2, w: W, h: H };
+    makeDraggable(win, win.querySelector(".peer-head"));
+    win.querySelector(".peer-min").addEventListener("click", function (e) { e.stopPropagation(); win.classList.add("mini"); });
+    win.addEventListener("click", function () { if (win.classList.contains("mini")) win.classList.remove("mini"); });
+    others[key] = o; return o;
+  }
+  function clearOthers() {
+    Object.keys(others).forEach(function (k) { if (others[k].win && others[k].win.parentNode) others[k].win.remove(); });
+    others = {};
+  }
+  function makeDraggable(el, handle) {
+    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.target.closest("button")) return; // let the head's minimize button work
+      dragging = true; try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      var r = el.getBoundingClientRect(); ox = r.left; oy = r.top; sx = e.clientX; sy = e.clientY;
+      el.style.right = "auto"; el.style.left = ox + "px"; el.style.top = oy + "px";
+      e.preventDefault();
+    });
+    handle.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      el.style.left = Math.max(2, Math.min(window.innerWidth - 44, ox + (e.clientX - sx))) + "px";
+      el.style.top = Math.max(2, Math.min(window.innerHeight - 44, oy + (e.clientY - sy))) + "px";
+    });
+    function up(e) { dragging = false; try { handle.releasePointerCapture(e.pointerId); } catch (_) {} }
+    handle.addEventListener("pointerup", up);
+    handle.addEventListener("pointercancel", up);
+  }
+
+  /* ---------- routing & full redraw ---------- */
+  function routeStroke(s) {
+    if (s.cid === cid()) return;            // my own strokes are already on my canvas
+    if (boardMode === "shared") drawStroke(s);
+    else { var o = ensureOther(s.cid); drawOn(o.ctx, s, { w: o.w, h: o.h, scale: o.w / mainW() }); }
+  }
+  function fullRender() {
+    setup(); clearOthers();
+    allStrokes.forEach(function (s) {
+      var mine = s.cid === cid();
+      if (mine || boardMode === "shared") drawStroke(s);
+      else { var o = ensureOther(s.cid); drawOn(o.ctx, s, { w: o.w, h: o.h, scale: o.w / mainW() }); }
+    });
+  }
+  function setBoardMode(m) {
+    boardMode = m;
+    $$(".board-mode-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.bmode === m); });
+    if (active) fullRender();
+  }
+
   /* ---------- sync ---------- */
   function subscribe() {
     unsubBoard = Cloud.watchBoard(function (list) {
-      // a clear happened (fewer strokes than we've drawn, or ids missing) -> full redraw
-      var shrunk = list.length < drawnCount;
-      if (shrunk) { setup(); drawnIds = {}; drawnCount = 0; }
+      if (list.length < allStrokes.length) { allStrokes = []; seen = {}; setup(); clearOthers(); } // a clear happened
       list.forEach(function (s) {
-        if (drawnIds[s.id]) return;
-        drawnIds[s.id] = 1; drawnCount++;
-        if (s.cid === cid() && !shrunk) return; // already drawn locally
-        drawStroke(s);
+        if (seen[s.id]) return;
+        seen[s.id] = 1; allStrokes.push(s);
+        routeStroke(s);
       });
     });
     unsubLike = Cloud.watchLike(BOARD_LIKE_ID, function (n) { var el = $("#boardLikeN"); if (el) el.textContent = n; });
@@ -112,7 +181,7 @@
     });
   }
 
-  /* ---------- mode toggle ---------- */
+  /* ---------- mode toggle (solo / live) ---------- */
   function setMode(mode) {
     var live = mode === "live";
     $("#soloWrap").hidden = live;
@@ -122,14 +191,14 @@
   }
   function enterLive() {
     if (active) return; active = true;
-    setup(); drawnIds = {}; drawnCount = 0;
+    setup(); allStrokes = []; seen = {}; clearOthers();
     initStickers();
     bind();
     subscribe();
   }
   function leaveLive() {
     if (!active) return; active = false;
-    unsubscribe();
+    unsubscribe(); clearOthers();
   }
   var bound = false;
   function bind() {
@@ -149,6 +218,7 @@
       catch (e) { toast("Couldn't save"); }
     });
     $("#boardLike").addEventListener("click", function () { if (window.Cloud) Cloud.like(BOARD_LIKE_ID); });
+    $$(".board-mode-btn").forEach(function (b) { b.addEventListener("click", function () { setBoardMode(b.dataset.bmode); }); });
   }
 
   document.addEventListener("DOMContentLoaded", function () {

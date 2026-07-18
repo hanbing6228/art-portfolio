@@ -153,6 +153,7 @@
       '<button class="icon-btn" id="cdExpand" aria-label="Fullscreen">' + (window.ICONS ? ICONS.expand : "") + "</button>" +
       '<button class="icon-btn" id="cdClose">' + (window.ICONS ? ICONS.close : "x") + "</button></div>" +
       '<div id="chatDrawerList" class="guestbook-list chat"></div>' +
+      '<div class="reaction-bar" id="reactionBar"></div>' +
       '<div class="guestbook-form">' +
       '<input id="cdName" class="gb-input" maxlength="24" placeholder="Your name" />' +
       '<div class="chat-input-row">' +

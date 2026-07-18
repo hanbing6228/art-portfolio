@@ -2,7 +2,12 @@
    Pointer drawing with pressure, pen / marker / eraser brushes, size &
    opacity sliders, color picker + palette, undo / redo, clear, save PNG. */
 (function () {
-  var PALETTE = ["#2f5d55", "#60925e", "#7cb342", "#a9c6a0", "#c8f5f9", "#f3c969", "#e5764b", "#e5484d", "#8a5a3c", "#d9b3b3", "#4a90d9", "#7b5ea7", "#111111", "#ffffff"];
+  var PALETTE = [
+    "#2f5d55", "#3f7d6e", "#60925e", "#7cb342", "#a9c6a0", "#cfe8c2",
+    "#c8f5f9", "#4ac6d6", "#4a90d9", "#2f5fae", "#7b5ea7", "#b06fc9",
+    "#f3c969", "#f0a24b", "#e5764b", "#e5484d", "#c0392b", "#8a5a3c",
+    "#d9b3b3", "#f6b8c8", "#7a7a7a", "#b8b8b8", "#111111", "#ffffff"
+  ];
 
   var canvas, ctx, drawing = false, ready = false;
   var color = "#2f5d55", brush = 8, opacity = 1, tool = "pen";
@@ -55,19 +60,33 @@
   function pos(e) { var rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
   function strokeStyleFor(pressure) {
     if (tool === "eraser") return "rgba(255,255,255,1)";
-    var a = tool === "marker" ? opacity * 0.35 : opacity;
+    var a = opacity;
+    if (tool === "marker") a = opacity * 0.4;
+    else if (tool === "highlighter") a = opacity * 0.28;
     return hexToRgba(color, a);
   }
   function widthFor(pressure) {
-    var w = brush * (tool === "marker" ? 1.6 : 1);
+    var mult = tool === "marker" ? 1.7 : tool === "highlighter" ? 2.8 : tool === "pencil" ? 0.55 : 1;
+    var w = brush * mult;
+    if (tool === "highlighter") return Math.max(3, w); // flat, chunky
     var pr = (pressure && pressure > 0 && pressure !== 0.5) ? pressure : 0.6; // pens/touch vary; mouse ~0.5
     return Math.max(1, w * (0.55 + 0.9 * pr));
   }
+  // double-tap on the canvas undoes the last stroke
+  var lastTapTime = 0, lastTapX = 0, lastTapY = 0, wasTap = false, skipStroke = false, movedDist = 0;
   function start(e) {
     if (!ready) return;
     e.preventDefault();
-    drawing = true;
-    var p = pos(e); lastX = p.x; lastY = p.y;
+    var p = pos(e);
+    var now = Date.now();
+    if (wasTap && now - lastTapTime < 320 && Math.abs(p.x - lastTapX) < 26 && Math.abs(p.y - lastTapY) < 26) {
+      // double-tap → undo (removes the first tap's dot, then the stroke before it)
+      skipStroke = true; wasTap = false; lastTapTime = 0;
+      undo(); undo();
+      return;
+    }
+    drawing = true; skipStroke = false; movedDist = 0;
+    lastX = p.x; lastY = p.y;
     ctx.strokeStyle = strokeStyleFor(e.pressure);
     ctx.fillStyle = strokeStyleFor(e.pressure);
     var w = widthFor(e.pressure);
@@ -77,12 +96,20 @@
     if (!drawing) return;
     e.preventDefault();
     var p = pos(e);
+    movedDist += Math.abs(p.x - lastX) + Math.abs(p.y - lastY);
     ctx.strokeStyle = strokeStyleFor(e.pressure);
     ctx.lineWidth = widthFor(e.pressure);
     ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
     lastX = p.x; lastY = p.y;
   }
-  function end() { if (drawing) { drawing = false; pushHistory(); } }
+  function end() {
+    if (skipStroke) { skipStroke = false; return; }
+    if (drawing) {
+      drawing = false; pushHistory();
+      wasTap = movedDist < 8;                 // a quick, still touch counts as a "tap"
+      lastTapTime = Date.now(); lastTapX = lastX; lastTapY = lastY;
+    }
+  }
 
   function hexToRgba(hex, a) {
     hex = hex.replace("#", "");
@@ -163,16 +190,40 @@
     initFullscreen();
   }
 
-  /* ---------- fullscreen canvas + scalable floating toolbar ---------- */
-  var SCALES = ["", "tb-sm", "tb-lg"]; // normal / smaller / bigger toolbar
-  var scaleIx = 0;
+  /* ---------- timed drawing ---------- */
+  var timerId = null, timerEnd = 0;
+  function setTimer(mins) {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    $$(".timer-opt").forEach(function (b) { b.classList.toggle("active", +b.dataset.min === mins); });
+    if (!mins) { showTimer(-1); toast("Timer off"); return; }
+    timerEnd = Date.now() + mins * 60000;
+    timerId = setInterval(tickTimer, 500); tickTimer();
+    toast(mins + " min — go!");
+  }
+  function tickTimer() {
+    var left = Math.max(0, timerEnd - Date.now());
+    showTimer(left);
+    if (left <= 0) { clearInterval(timerId); timerId = null; timeUp(); }
+  }
+  function showTimer(ms) {
+    var b = $("#padTimer"); if (!b) return;
+    if (ms < 0) { b.hidden = true; return; }
+    var s = Math.ceil(ms / 1000), m = Math.floor(s / 60); s = s % 60;
+    b.textContent = m + ":" + (s < 10 ? "0" : "") + s; b.hidden = false;
+    b.classList.toggle("low", ms > 0 && ms < 15000);
+  }
+  function timeUp() {
+    showTimer(0); toast("Time's up! ⏰");
+    var s = stage(); if (s) { s.classList.add("time-up"); setTimeout(function () { s.classList.remove("time-up"); }, 1600); }
+  }
+
+  /* ---------- fullscreen canvas + draggable / collapsible toolbar ---------- */
   function stage() { return $("#doodleStage"); }
   function isFs() { var s = stage(); return s && s.classList.contains("fs"); }
   function reflow() { setTimeout(function () { if (ready) setupCanvas(true); }, 70); }
   function setFsIcon() {
     var b = $("#doodleFull"); if (!b) return;
     b.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS[isFs() ? "collapse" : "expand"]) || "") + "</span>";
-    var sc = $("#padScale"); if (sc) sc.hidden = !isFs();
   }
   var stageHome = null; // remember where the stage lived so we can put it back
   function toggleFs() {
@@ -184,11 +235,16 @@
     document.body.appendChild(s);
     s.classList.add("fs");
     document.body.classList.add("doodle-fs-lock");
+    // enter as a small draggable puck tucked in the corner
+    var bar = $(".pad-bar");
+    if (bar) { bar.classList.add("floating", "collapsed"); bar.style.left = "12px"; bar.style.top = "72px"; bar.style.transform = "none"; }
     closePops(); setFsIcon(); reflow();
   }
   function exitFs() {
     var s = stage(); if (!s || !isFs()) return;
     s.classList.remove("fs"); document.body.classList.remove("doodle-fs-lock");
+    var bar = $(".pad-bar");
+    if (bar) { bar.classList.remove("floating", "collapsed"); bar.style.left = bar.style.top = bar.style.transform = ""; }
     if (stageHome) {
       if (stageHome.next && stageHome.next.parentNode === stageHome.parent) stageHome.parent.insertBefore(s, stageHome.next);
       else stageHome.parent.appendChild(s);
@@ -196,16 +252,39 @@
     }
     setFsIcon(); reflow();
   }
-  function cycleScale() {
-    var s = stage(); if (!s) return;
-    s.classList.remove("tb-sm", "tb-lg");
-    scaleIx = (scaleIx + 1) % SCALES.length;
-    if (SCALES[scaleIx]) s.classList.add(SCALES[scaleIx]);
+  // drag the toolbar by its grip; a tap (no drag) collapses/expands it
+  function initGrip() {
+    var grip = $("#padGrip"), bar = $(".pad-bar");
+    if (!grip || !bar) return;
+    var dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    grip.addEventListener("pointerdown", function (e) {
+      dragging = true; moved = false;
+      try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+      var r = bar.getBoundingClientRect(); ox = r.left; oy = r.top; sx = e.clientX; sy = e.clientY;
+      if (!bar.classList.contains("floating")) bar.classList.add("floating");
+      bar.style.left = ox + "px"; bar.style.top = oy + "px"; bar.style.transform = "none";
+      e.preventDefault(); e.stopPropagation();
+    });
+    grip.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) + Math.abs(dy) > 5) moved = true;
+      bar.style.left = Math.max(4, Math.min(window.innerWidth - 46, ox + dx)) + "px";
+      bar.style.top = Math.max(8, Math.min(window.innerHeight - 46, oy + dy)) + "px";
+    });
+    function up(e) {
+      if (!dragging) return; dragging = false;
+      try { grip.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (!moved) bar.classList.toggle("collapsed"); // tap = collapse ↔ expand
+    }
+    grip.addEventListener("pointerup", up);
+    grip.addEventListener("pointercancel", up);
   }
   function initFullscreen() {
     var full = $("#doodleFull"); if (full) full.addEventListener("click", toggleFs);
-    var sc = $("#padScale"); if (sc) sc.addEventListener("click", cycleScale);
     setFsIcon();
+    initGrip();
+    $$(".timer-opt").forEach(function (b) { b.addEventListener("click", function () { setTimer(+b.dataset.min); }); });
     // switching to "Together" leaves fullscreen and hides the button (live board
     // manages its own sizing); switching back to solo re-enables it.
     $$(".mode-btn").forEach(function (b) {

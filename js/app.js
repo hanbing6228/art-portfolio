@@ -74,22 +74,109 @@
     downloadCanvas(canvas, filename);
   };
 
-  /* ---------- Fullscreen image viewer (image only) ---------- */
+  /* ---------- Fullscreen image viewer (image only, + Save / Draw this) ---------- */
   window.openImageView = function (src) {
     if (!src) return;
     var v = document.getElementById("imgView");
     if (!v) {
       v = document.createElement("div");
       v.id = "imgView"; v.className = "img-view"; v.hidden = true;
-      v.innerHTML = '<button class="lightbox-close" id="imgViewClose">' + ((window.ICONS && ICONS.close) || "x") + '</button><img id="imgViewImg" alt="" referrerpolicy="no-referrer" />';
+      v.innerHTML =
+        '<button class="lightbox-close" id="imgViewClose">' + ((window.ICONS && ICONS.close) || "x") + "</button>" +
+        '<img id="imgViewImg" alt="" referrerpolicy="no-referrer" />' +
+        '<div class="img-view-actions">' +
+        '<button class="tool-chip" id="imgViewSave">' + icon("download") + " Save</button>" +
+        '<button class="tool-chip primary" id="imgViewDraw">' + icon("brush") + " Draw this</button>" +
+        "</div>";
       document.body.appendChild(v);
       var close = function () { v.hidden = true; };
-      v.addEventListener("click", function (e) { if (e.target === v || (e.target.closest && e.target.closest("#imgViewClose"))) close(); });
+      v.addEventListener("click", function (e) { if (e.target === v) close(); });
+      document.getElementById("imgViewClose").addEventListener("click", close);
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !v.hidden) close(); });
+      document.getElementById("imgViewSave").addEventListener("click", function (e) { e.stopPropagation(); saveImageUrl(v.dataset.src); });
+      document.getElementById("imgViewDraw").addEventListener("click", function (e) { e.stopPropagation(); close(); drawAlong(v.dataset.src); });
     }
+    v.dataset.src = src;
     document.getElementById("imgViewImg").src = src;
     v.hidden = false;
   };
+
+  // Save a (possibly cross-origin) image to the device. Cross-origin <a download>
+  // is ignored by browsers, so route through our same-origin proxy which sets a
+  // download header; data: URLs download directly.
+  window.saveImageUrl = function (src) {
+    if (!src) return;
+    try {
+      var a = document.createElement("a");
+      a.href = src.indexOf("data:") === 0 ? src : ("/api/img?url=" + encodeURIComponent(src));
+      a.download = "linrose-image.jpg";
+      document.body.appendChild(a); a.click(); a.remove();
+      toast("Saving…");
+    } catch (e) { window.open(src, "_blank"); }
+  };
+
+  // Open the doodle pad and float this picture as a movable reference to draw from.
+  function drawAlong(src) {
+    goTo("doodle");
+    var solo = document.querySelector('.mode-btn[data-mode="solo"]');
+    if (solo) solo.click();
+    setTimeout(function () { showReference(src); }, 250);
+  }
+
+  /* ---------- Floating reference window (drag / resize / shrink to a dot) ---------- */
+  window.showReference = function (src) {
+    if (!src) return;
+    var r = document.getElementById("refWin");
+    if (!r) {
+      r = document.createElement("div");
+      r.id = "refWin"; r.className = "ref-win"; r.hidden = true;
+      r.innerHTML =
+        '<div class="ref-head"><span class="ref-title">Reference</span>' +
+        '<button class="ref-min" aria-label="Shrink">' + ((window.ICONS && ICONS.minimize) || "–") + "</button>" +
+        '<button class="ref-close" aria-label="Close">' + ((window.ICONS && ICONS.close) || "x") + "</button></div>" +
+        '<img class="ref-img" alt="reference" referrerpolicy="no-referrer" />' +
+        '<button class="ref-resize" aria-label="Resize">' + ((window.ICONS && ICONS.resize) || "") + "</button>";
+      document.body.appendChild(r);
+      makeRefDraggable(r);
+      r.querySelector(".ref-close").addEventListener("click", function (e) { e.stopPropagation(); r.hidden = true; });
+      r.querySelector(".ref-min").addEventListener("click", function (e) { e.stopPropagation(); r.classList.add("mini"); });
+      r.addEventListener("click", function (e) { if (r.classList.contains("mini") && !e.target.closest("button")) r.classList.remove("mini"); });
+    }
+    r.querySelector(".ref-img").src = src;
+    r.classList.remove("mini");
+    r.style.left = ""; r.style.top = ""; r.style.right = ""; r.style.width = "180px";
+    r.hidden = false;
+    toast("Drag the reference anywhere • tap – to shrink");
+  };
+  function makeRefDraggable(el) {
+    var head = el.querySelector(".ref-head"), grip = el.querySelector(".ref-resize");
+    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    head.addEventListener("pointerdown", function (e) {
+      if (e.target.closest("button")) return; // let the head's buttons work
+      dragging = true; try { head.setPointerCapture(e.pointerId); } catch (_) {}
+      var rr = el.getBoundingClientRect(); ox = rr.left; oy = rr.top; sx = e.clientX; sy = e.clientY;
+      el.style.right = "auto"; el.style.left = ox + "px"; el.style.top = oy + "px"; e.preventDefault();
+    });
+    head.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      el.style.left = Math.max(2, Math.min(window.innerWidth - 44, ox + (e.clientX - sx))) + "px";
+      el.style.top = Math.max(2, Math.min(window.innerHeight - 44, oy + (e.clientY - sy))) + "px";
+    });
+    function up(e) { dragging = false; try { head.releasePointerCapture(e.pointerId); } catch (_) {} }
+    head.addEventListener("pointerup", up); head.addEventListener("pointercancel", up);
+
+    var rz = false, rw = 0, rsx = 0;
+    grip.addEventListener("pointerdown", function (e) {
+      rz = true; try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+      rw = el.getBoundingClientRect().width; rsx = e.clientX; e.preventDefault(); e.stopPropagation();
+    });
+    grip.addEventListener("pointermove", function (e) {
+      if (!rz) return;
+      el.style.width = Math.max(90, Math.min(window.innerWidth - 20, rw + (e.clientX - rsx))) + "px";
+    });
+    function up2(e) { rz = false; try { grip.releasePointerCapture(e.pointerId); } catch (_) {} }
+    grip.addEventListener("pointerup", up2); grip.addEventListener("pointercancel", up2);
+  }
 
   /* ---------- Navigation ---------- */
   function goTo(target) {
@@ -104,6 +191,10 @@
     btn.addEventListener("click", () => goTo(btn.dataset.target));
   });
 
+  // top-left avatar is the "About me" entry
+  const aboutEntry = $("#aboutEntry");
+  if (aboutEntry) aboutEntry.addEventListener("click", () => goTo("about"));
+
   /* ---------- Profile (from config, overridable by cloud) ---------- */
   // A profile object may come from the cloud (owner-edited). Any missing field
   // falls back to CONFIG in js/config.js.
@@ -117,7 +208,9 @@
 
     setText("#heroName", p.name || cfg.name || "My Name");
     setText("#heroTagline", p.tagline != null ? p.tagline : (cfg.tagline || ""));
-    $("#avatarImg").src = p.avatar || cfg.avatar || "assets/img/avatar.svg";
+    var av = p.avatar || cfg.avatar || "assets/img/avatar.svg";
+    $("#avatarImg").src = av;
+    var top = $("#topAvatar"); if (top) top.src = av;
     setText("#obsessionTitle", p.obsessionTitle != null ? p.obsessionTitle : (obs.title || ""));
     setText("#obsessionNote", p.obsessionNote != null ? p.obsessionNote : (obs.note || ""));
     setText("#siteTitle", p.siteTitle || cfg.siteTitle || "Portfolio");

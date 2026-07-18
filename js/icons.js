@@ -204,6 +204,11 @@
       '<path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.5-1.5" stroke="' + C.teal + '"/>'
     ),
     smile: svg('<circle cx="12" cy="12" r="8.5" fill="' + C.tan + '" stroke="' + C.teal + '"/><circle cx="9" cy="10.5" r="0.7" fill="' + C.teal + '" stroke="' + C.teal + '"/><circle cx="15" cy="10.5" r="0.7" fill="' + C.teal + '" stroke="' + C.teal + '"/><path d="M8.5 13.5c1.3 1.7 5.7 1.7 7 0" stroke="' + C.teal + '"/>'),
+    grip: svg('<circle cx="9" cy="6" r="1.3" fill="currentColor" stroke="currentColor"/><circle cx="15" cy="6" r="1.3" fill="currentColor" stroke="currentColor"/><circle cx="9" cy="12" r="1.3" fill="currentColor" stroke="currentColor"/><circle cx="15" cy="12" r="1.3" fill="currentColor" stroke="currentColor"/><circle cx="9" cy="18" r="1.3" fill="currentColor" stroke="currentColor"/><circle cx="15" cy="18" r="1.3" fill="currentColor" stroke="currentColor"/>'),
+    pencil: svg('<path d="M5 19l1.2-4.2L16 5a1.8 1.8 0 0 1 2.6 2.6L8.8 17.4 5 19Z" fill="' + C.tan + '" stroke="' + C.teal + '"/><path d="M14.2 6.8l2.6 2.6M5 19l1.6-1.6" stroke="' + C.teal + '"/>'),
+    highlighter: svg('<path d="M6 20h6" stroke="' + C.tan + '"/><path d="M8 17l-1.5 1.5h3L18 9.5l-2.5-2.5L7 15.5Z" fill="' + C.cyan + '" stroke="' + C.teal + '"/><path d="M13.5 8.5l2.5 2.5" stroke="' + C.teal + '"/>'),
+    download: svg('<path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14" stroke="' + C.teal + '"/>'),
+    minimize: svg('<path d="M6 12h12"/>'),
     expand: svg('<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>'),
     collapse: svg('<path d="M9 4v3a2 2 0 0 1-2 2H4M15 4v3a2 2 0 0 0 2 2h3M9 20v-3a2 2 0 0 0-2-2H4M15 20v-3a2 2 0 0 1 2-2h3"/>'),
     resize: svg('<path d="M15 4h5v5M20 4l-6 6M9 20H4v-5M4 20l6-6"/>'),

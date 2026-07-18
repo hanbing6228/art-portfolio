@@ -17,7 +17,7 @@
 
   <!-- top bar -->
   <header class="topbar">
-    <span class="topbar-title"><span class="ic" data-icon="palette"></span> <span id="siteTitle">Linrose</span></span>
+    <button class="topbar-title" id="aboutEntry" aria-label="About me"><img id="topAvatar" class="top-avatar" alt="" /> <span id="siteTitle">Linrose</span></button>
     <span class="topbar-actions">
       <button id="adminBtn" class="icon-btn" aria-label="Manage" title="Manage"><span class="ic" data-icon="gear"></span></button>
       <button id="themeToggle" class="icon-btn" aria-label="Toggle light/dark"><span class="ic" data-icon="moon"></span></button>
@@ -72,11 +72,15 @@
       </div>
 
       <div class="doodle-stage" id="doodleStage">
+      <div class="pad-timer" id="padTimer" hidden></div>
       <!-- Procreate-style toolbar: same-type controls grouped, details tucked into popovers -->
       <div class="pad-bar">
+        <button class="pad-btn pad-grip" id="padGrip" title="Move / collapse" aria-label="Move toolbar"><span class="ic" data-icon="grip"></span></button>
         <div class="pad-seg" role="group" aria-label="Brushes">
           <button class="pad-btn brush-btn active" data-brush="pen" title="Pen"><span class="ic" data-icon="doodle"></span></button>
+          <button class="pad-btn brush-btn" data-brush="pencil" title="Pencil"><span class="ic" data-icon="pencil"></span></button>
           <button class="pad-btn brush-btn" data-brush="marker" title="Marker"><span class="ic" data-icon="brush"></span></button>
+          <button class="pad-btn brush-btn" data-brush="highlighter" title="Highlighter"><span class="ic" data-icon="highlighter"></span></button>
           <button class="pad-btn brush-btn" data-brush="eraser" title="Eraser"><span class="ic" data-icon="eraser"></span></button>
         </div>
 
@@ -93,11 +97,16 @@
           <div class="pad-pop" id="adjustPop" hidden>
             <label class="pad-slider">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
             <label class="pad-slider">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
+            <div class="pad-timer-row"><span class="pad-timer-label">Timed</span>
+              <button class="timer-opt active" data-min="0">Off</button>
+              <button class="timer-opt" data-min="1">1m</button>
+              <button class="timer-opt" data-min="3">3m</button>
+              <button class="timer-opt" data-min="5">5m</button>
+            </div>
           </div>
         </div>
 
         <div class="pad-seg pad-view">
-          <button class="pad-btn pad-scale" id="padScale" title="Resize toolbar" hidden><span class="ic" data-icon="resize"></span></button>
           <button class="pad-btn" id="doodleFull" title="Fullscreen"><span class="ic" data-icon="expand"></span></button>
         </div>
       </div>
@@ -113,6 +122,10 @@
       </div>
 
       <div id="liveBoardWrap" hidden>
+        <div class="board-submode">
+          <button class="tool-chip board-mode-btn active" data-bmode="shared" title="Everyone on one canvas"><span class="ic" data-icon="chat"></span> One canvas</button>
+          <button class="tool-chip board-mode-btn" data-bmode="separate" title="Each draws their own; watch others in a floating window"><span class="ic" data-icon="gallery"></span> Each their own</button>
+        </div>
         <div class="live-head">
           <span class="chat-online" id="boardOnline"><span class="online-dot"></span> <span id="boardOnlineN">1</span> drawing</span>
           <span class="live-actions">
@@ -150,22 +163,6 @@
       </div>
       <div id="achvContent"></div>
 
-      <div class="card chat-card">
-        <div class="chat-head">
-          <h3 class="card-h">Live chat <span class="ic" data-icon="chat"></span></h3>
-          <span class="chat-online" id="chatOnline" hidden><span class="online-dot"></span> <span id="chatOnlineN">1</span> online</span>
-        </div>
-        <div id="guestbookList" class="guestbook-list chat"></div>
-        <div class="reaction-bar" id="reactionBar"></div>
-        <div class="guestbook-form">
-          <input id="gbName" class="gb-input" maxlength="24" placeholder="Your name" />
-          <div class="chat-input-row">
-            <button id="gbEmoji" class="emoji-btn" aria-label="Emoji"><span class="ic" data-icon="smile"></span></button>
-            <textarea id="gbMsg" class="gb-input" maxlength="200" rows="1" placeholder="Type a message…"></textarea>
-            <button id="gbSend" class="tool-chip primary"><span class="ic" data-icon="send"></span></button>
-          </div>
-        </div>
-      </div>
       <div class="share-row">
         <button class="tool-chip primary" id="shareSite"><span class="ic" data-icon="share"></span> Share my portfolio</button>
       </div>
@@ -180,7 +177,6 @@
     <button class="nav-btn" data-target="favorites"><span class="ic" data-icon="star"></span>Faves</button>
     <button class="nav-btn" data-target="doodle"><span class="ic" data-icon="doodle"></span>Doodle</button>
     <button class="nav-btn" data-target="quiz"><span class="ic" data-icon="play"></span>Game</button>
-    <button class="nav-btn" data-target="about"><span class="ic" data-icon="about"></span>About</button>
   </nav>
 
   <!-- ============ LIGHTBOX ============ -->
