@@ -12,6 +12,57 @@
   function fmtDate(d) { try { return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch (e) { return ""; } }
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
 
+  /* ---------- message input helpers: autosize + Snapchat-style emoji ---------- */
+  function autosize(el) { if (!el) return; el.style.height = "auto"; el.style.height = Math.min(120, el.scrollHeight) + "px"; }
+  function bindInput(el) { if (!el) return; el.addEventListener("input", function () { autosize(el); }); autosize(el); }
+
+  var EMOJIS = ["😀","😄","😊","😉","😍","🥰","😎","😜","😂","😅","🤪","😝","🤔","😴","😭","😱","😤","🥳","😇","🙃","👍","👏","🙌","🤝","🔥","⭐","❤️","💯","🎉","🎨","🌈","✨","🍀","🐢","🌸","🍕"];
+  var TILE = ["#F7B32B","#3AB0C4","#E85D75","#7FB77E","#F49097","#5AA9E6","#F6C177","#9D8DF1","#59C3C3"];
+  var emojiPop = null, emojiTarget = null;
+  function buildEmojiPop() {
+    if (emojiPop) return;
+    emojiPop = document.createElement("div");
+    emojiPop.className = "emoji-pop"; emojiPop.hidden = true;
+    emojiPop.innerHTML = EMOJIS.map(function (e, i) {
+      return '<button class="emoji-tile" data-e="' + e + '" style="background:' + TILE[i % TILE.length] + '">' + e + "</button>";
+    }).join("");
+    document.body.appendChild(emojiPop);
+    emojiPop.addEventListener("click", function (ev) {
+      var b = ev.target.closest(".emoji-tile"); if (!b || !emojiTarget) return;
+      insertAtCursor(emojiTarget, b.dataset.e);
+    });
+    document.addEventListener("click", function (ev) {
+      if (!emojiPop || emojiPop.hidden) return;
+      if (ev.target.closest(".emoji-pop") || ev.target.closest(".emoji-btn")) return;
+      emojiPop.hidden = true;
+    });
+  }
+  function insertAtCursor(el, text) {
+    var s = el.selectionStart != null ? el.selectionStart : el.value.length;
+    var e = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+    el.value = el.value.slice(0, s) + text + el.value.slice(e);
+    el.selectionStart = el.selectionEnd = s + text.length;
+    autosize(el); el.focus();
+  }
+  function attachEmoji(btn, target) {
+    if (!btn || !target) return;
+    btn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      buildEmojiPop();
+      var reopen = emojiPop.hidden || emojiTarget !== target;
+      emojiTarget = target;
+      if (!reopen) { emojiPop.hidden = true; return; }
+      emojiPop.hidden = false;
+      var r = btn.getBoundingClientRect();
+      var pr = emojiPop.getBoundingClientRect();
+      var left = Math.max(8, Math.min(r.left, window.innerWidth - pr.width - 8));
+      var top = r.top - pr.height - 10;
+      if (top < 8) top = r.bottom + 10;
+      emojiPop.style.left = left + "px";
+      emojiPop.style.top = top + "px";
+    });
+  }
+
   function bubble(m) {
     return '<div class="gb-item"><div class="gb-who">' + esc(m.name) +
       ' <span style="font-weight:normal;color:var(--muted)">· ' + esc(m.date || "") + "</span></div>" +
@@ -38,7 +89,7 @@
       var m = getLocal(); m.push({ name: name, msg: msg, date: fmtDate(Date.now()) }); saveLocal(m);
       setMessages(m.slice());
     } else if (!saved) { toast("Send failed: " + (window.Cloud.lastError || "try again")); return; }
-    if (msgEl) msgEl.value = "";
+    if (msgEl) { msgEl.value = ""; msgEl.style.height = ""; }
     if (window.Achievements) Achievements.bump("messagesLeft");
   }
 
@@ -104,29 +155,54 @@
       '<div id="chatDrawerList" class="guestbook-list chat"></div>' +
       '<div class="guestbook-form">' +
       '<input id="cdName" class="gb-input" maxlength="24" placeholder="Your name" />' +
-      '<div class="chat-input-row"><input id="cdMsg" class="gb-input" maxlength="200" placeholder="Type a message…" />' +
+      '<div class="chat-input-row">' +
+      '<button id="cdEmoji" class="emoji-btn" aria-label="Emoji">' + icon("smile") + "</button>" +
+      '<textarea id="cdMsg" class="gb-input" maxlength="200" rows="1" placeholder="Type a message…"></textarea>' +
       '<button id="cdSend" class="tool-chip primary">' + icon("send") + "</button></div></div>" +
       "</div>";
     document.body.appendChild(drawer);
 
-    fab.addEventListener("click", function () { drawer.hidden = false; renderAll(); });
-    drawer.addEventListener("click", function (e) { if (e.target === drawer) drawer.hidden = true; });
-    document.getElementById("cdClose").addEventListener("click", function () { drawer.hidden = true; });
     var panel = drawer.querySelector(".chat-drawer-panel");
+    var cdMsg = document.getElementById("cdMsg");
+    function openDrawer() { drawer.hidden = false; renderAll(); syncDrawerVV(); }
+    function closeDrawer() { drawer.hidden = true; resetDrawerVV(); }
+    fab.addEventListener("click", openDrawer);
+    drawer.addEventListener("click", function (e) { if (e.target === drawer) closeDrawer(); });
+    document.getElementById("cdClose").addEventListener("click", closeDrawer);
     document.getElementById("cdExpand").addEventListener("click", function () {
       var full = panel.classList.toggle("full");
       this.innerHTML = (window.ICONS && ICONS[full ? "collapse" : "expand"]) || "";
-      renderAll();
+      renderAll(); syncDrawerVV();
     });
-    document.getElementById("cdSend").addEventListener("click", function () { post(document.getElementById("cdName"), document.getElementById("cdMsg")); });
-    document.getElementById("cdMsg").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); post(document.getElementById("cdName"), document.getElementById("cdMsg")); } });
+    document.getElementById("cdSend").addEventListener("click", function () { post(document.getElementById("cdName"), cdMsg); });
+    cdMsg.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post(document.getElementById("cdName"), cdMsg); } });
+    bindInput(cdMsg);
+    attachEmoji(document.getElementById("cdEmoji"), cdMsg);
+
+    // keep the panel (and its input) above the on-screen keyboard on phones
+    function syncDrawerVV() {
+      var vv = window.visualViewport; if (!vv || drawer.hidden) return;
+      drawer.style.top = vv.offsetTop + "px";
+      drawer.style.height = vv.height + "px";
+      drawer.style.bottom = "auto";
+    }
+    function resetDrawerVV() { drawer.style.top = ""; drawer.style.height = ""; drawer.style.bottom = ""; }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", syncDrawerVV);
+      window.visualViewport.addEventListener("scroll", syncDrawerVV);
+    }
+    window.__syncDrawerVV = syncDrawerVV;
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     var send = $("#gbSend");
     if (send) send.addEventListener("click", function () { post($("#gbName"), $("#gbMsg")); });
     var msg = $("#gbMsg");
-    if (msg) msg.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); post($("#gbName"), $("#gbMsg")); } });
+    if (msg) {
+      msg.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post($("#gbName"), $("#gbMsg")); } });
+      bindInput(msg);
+      attachEmoji($("#gbEmoji"), msg);
+    }
 
     buildChatUI();
 

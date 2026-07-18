@@ -71,26 +71,19 @@
     grid.innerHTML = "";
     items.forEach(function (f) {
       var card = document.createElement("div");
-      card.className = "art-card fave-card";
-      var media = f.img
-        ? '<div class="art-imgwrap"><img src="' + escAttr(f.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest(\'.art-card\').classList.add(\'noimg\');this.remove();" /></div>'
-        : "";
+      card.className = "art-card fave-card" + (f.img ? "" : " noimg");
+      // Clean Pinterest-style wall: just the picture. (No title / link / tags on
+      // the card face.) Cards with no image fall back to a small label.
       card.innerHTML =
-        media +
-        '<div class="art-meta">' +
-        (f.title ? '<div class="art-title">' + esc(f.title) + "</div>" : "") +
-        (f.note ? '<div class="fave-note">' + esc(f.note) + "</div>" : "") +
-        ((f.tags && f.tags.length) ? '<div class="art-tags">' + f.tags.map(function (t) { return '<button class="art-tag" data-t="' + escAttr(t) + '">#' + esc(t) + "</button>"; }).join("") + "</div>" : "") +
-        (f.url ? '<a class="fave-link" href="' + escAttr(f.url) + '" target="_blank" rel="noopener">' + icon("link") + " " + esc(hostOf(f.url) || "visit") + "</a>" : "") +
-        (isOwner ? '<button class="mini-btn fave-del" data-id="' + escAttr(f.id) + '">' + icon("trash") + "</button>" : "") +
-        "</div>";
-      // image → in-app viewer
+        (f.img
+          ? '<div class="art-imgwrap"><img src="' + escAttr(f.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest(\'.art-card\').classList.add(\'noimg\');this.remove();" /></div>'
+          : '<div class="fave-fallback">' + esc(f.title || hostOf(f.url) || "link") + "</div>") +
+        (isOwner ? '<button class="mini-btn fave-del" data-id="' + escAttr(f.id) + '">' + icon("trash") + "</button>" : "");
+      // tap the picture → fullscreen image; a link-only card → open the link
       var iw = card.querySelector(".art-imgwrap");
       if (iw) iw.addEventListener("click", function () { openViewer(f); });
-      // tag chips jump-filter
-      card.querySelectorAll(".art-tag").forEach(function (chip) {
-        chip.addEventListener("click", function (e) { e.stopPropagation(); currentTag = chip.dataset.t; renderFilters(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); });
-      });
+      var fb = card.querySelector(".fave-fallback");
+      if (fb && f.url) fb.addEventListener("click", function () { window.open(f.url, "_blank", "noopener"); });
       var del = card.querySelector(".fave-del");
       if (del) del.addEventListener("click", async function (e) {
         e.stopPropagation();
@@ -171,13 +164,16 @@
     if (meta && meta.title && !t.value) t.value = meta.title;
     if (meta && meta.image) { btn.textContent = "Preview"; btn.disabled = false; showPreview(meta.image, "Preview loaded!"); return; }
 
-    // 2) Pinterest & other login-walled pages block the crawler above. Render the
-    //    page with a JS-capable reader and pull the real image out of it.
     btn.textContent = "Grabbing…";
+    // 2) read the page's own og:image through a CORS proxy (follows pin.it → pinterest)
+    var og = await readOgImage(url);
+    if (og) { btn.textContent = "Preview"; btn.disabled = false; showPreview(og, "Got the picture!"); return; }
+
+    // 3) render the page with a JS-capable reader and pull the real image out
     var scraped = await scrapeImage(url);
     if (scraped) { btn.textContent = "Preview"; btn.disabled = false; showPreview(scraped, "Got the picture!"); return; }
 
-    // 3) last resort: a screenshot of the page
+    // 4) last resort: a screenshot of the page
     btn.textContent = "Preview"; btn.disabled = false;
     var shot = screenshotUrl(url);
     var pv3 = document.getElementById("favInPrev");
@@ -192,8 +188,28 @@
     pv.src = src; pv.hidden = false;
     if (msg) toast(msg);
   }
+  function bumpPin(u) { return u.replace(/\/(?:\d{2,3}x\d{0,3}|\d{2,3}x)\//, "/736x/"); }
+  // Fetch the raw HTML through a CORS proxy and read <meta og:image>. The proxy
+  // follows the pin.it redirect server-side, so we get the real pinterest page.
+  async function readOgImage(url) {
+    var proxies = [
+      "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+      "https://corsproxy.io/?url=" + encodeURIComponent(url),
+    ];
+    for (var i = 0; i < proxies.length; i++) {
+      try {
+        var res = await fetch(proxies[i]);
+        if (!res.ok) continue;
+        var html = await res.text();
+        var m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+             || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+             || html.match(/https?:\/\/i\.pinimg\.com\/[^\s"'<>\\]+\.(?:jpg|jpeg|png|webp)/i);
+        if (m) return bumpPin(m[1] || m[0]);
+      } catch (e) {}
+    }
+    return null;
+  }
   // Render the page (JS + redirects) via a reader proxy and extract the main image.
-  // Works well for Pinterest pins, whose image lives on i.pinimg.com.
   async function scrapeImage(url) {
     try {
       var res = await fetch("https://r.jina.ai/" + url, { headers: { "x-return-format": "markdown" } });
@@ -202,8 +218,7 @@
       var m = text.match(/https?:\/\/i\.pinimg\.com\/[^\s"')\]]+\.(?:jpg|jpeg|png|webp)/i)
            || text.match(/https?:\/\/[^\s"')\]]+\.(?:jpg|jpeg|png|webp)/i);
       if (!m) return null;
-      // bump tiny Pinterest thumbnails up to a nicer size
-      return m[0].replace(/\/(?:\d{2,3}x\d{0,3}|\d{2,3}x)\//, "/736x/");
+      return bumpPin(m[0]);
     } catch (e) { return null; }
   }
   // screenshot-service fallback: renders the page and returns it as an image

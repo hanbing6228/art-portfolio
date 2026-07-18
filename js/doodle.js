@@ -174,17 +174,26 @@
     b.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS[isFs() ? "collapse" : "expand"]) || "") + "</span>";
     var sc = $("#padScale"); if (sc) sc.hidden = !isFs();
   }
+  var stageHome = null; // remember where the stage lived so we can put it back
   function toggleFs() {
+    if (isFs()) { exitFs(); return; }
     var s = stage(); if (!s) return;
-    s.classList.toggle("fs");
-    document.body.classList.toggle("doodle-fs-lock", isFs());
-    closePops();
-    setFsIcon();
-    reflow();
+    // Portal the stage to <body> so position:fixed is relative to the viewport
+    // (not an ancestor) — this is what keeps it from drifting on iOS.
+    stageHome = { parent: s.parentNode, next: s.nextSibling };
+    document.body.appendChild(s);
+    s.classList.add("fs");
+    document.body.classList.add("doodle-fs-lock");
+    closePops(); setFsIcon(); reflow();
   }
   function exitFs() {
     var s = stage(); if (!s || !isFs()) return;
     s.classList.remove("fs"); document.body.classList.remove("doodle-fs-lock");
+    if (stageHome) {
+      if (stageHome.next && stageHome.next.parentNode === stageHome.parent) stageHome.parent.insertBefore(s, stageHome.next);
+      else stageHome.parent.appendChild(s);
+      stageHome = null;
+    }
     setFsIcon(); reflow();
   }
   function cycleScale() {
@@ -224,7 +233,10 @@
     initControls();
     bindDrawing();
     updateHistBtns();
-    document.addEventListener("pagechange", function (e) { if (e.detail === "doodle" && !ready) { setupCanvas(); } });
+    document.addEventListener("pagechange", function (e) {
+      if (e.detail === "doodle" && !ready) { setupCanvas(); }
+      if (e.detail !== "doodle") exitFs(); // never leave a fullscreen canvas covering other pages
+    });
     var t;
     window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(function () { if (ready) setupCanvas(true); }, 250); });
   });
