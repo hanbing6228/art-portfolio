@@ -320,8 +320,16 @@
     ov.hidden = false;
   }
 
-  // re-fit the board when it changes size (e.g. entering/leaving fullscreen)
-  function refit() { if (active) { setup(); fullRender(); } }
+  // re-fit the board when it changes size (e.g. entering/leaving fullscreen).
+  // Preserve the current pixels (rescaled) instead of redrawing from synced
+  // strokes — so locally-drawn strokes that haven't synced yet never vanish.
+  function refit() {
+    if (!active || !canvas) return;
+    var prev = null;
+    try { prev = canvas.toDataURL(); } catch (e) {}
+    setup();
+    if (prev) { var im = new Image(); im.onload = function () { var d = dims(); ctx.drawImage(im, 0, 0, d.w, d.h); }; im.src = prev; }
+  }
   window.addEventListener("doodle-reflow", refit);
   var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(refit, 250); });
 
