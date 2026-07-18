@@ -192,6 +192,7 @@
       '<circle cx="12" cy="12" r="3.3" fill="' + C.cream + '" stroke="' + C.teal + '"/>'
     ),
     star: svg('<path d="M12 3l2.5 6.1L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.5-.5Z" fill="' + C.tan + '" stroke="' + C.teal + '"/>'),
+    plus: svg('<path d="M12 5v14M5 12h14" stroke-width="2.4"/>'),
     link: svg(
       '<path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5" stroke="' + C.teal + '"/>' +
       '<path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.5-1.5" stroke="' + C.teal + '"/>'

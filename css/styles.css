@@ -109,7 +109,29 @@ body {
 
 /* ===== Favorites cards ===== */
 .fave-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; line-height: 1.35; }
-.fave-link { font-size: 0.72rem; color: var(--mid); font-weight: bold; display: flex; align-items: center; gap: 4px; }
+.fave-link { font-size: 0.72rem; color: var(--mid); font-weight: bold; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+
+/* floating + button (owner only) */
+.fav-fab {
+  position: fixed; right: 16px; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 45;
+  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--mid); color: #fff; box-shadow: 0 6px 18px rgba(47,93,85,0.35);
+  display: flex; align-items: center; justify-content: center;
+}
+.fav-fab .ic-svg { width: 1.9rem; height: 1.9rem; }
+.fav-fab[hidden] { display: none; }
+
+/* in-app image viewer */
+.fave-viewer {
+  position: fixed; inset: 0; z-index: 90; background: rgba(20,35,30,0.82); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.fave-viewer[hidden] { display: none; }
+.fave-viewer-inner { position: relative; max-width: 560px; width: 100%; text-align: center; }
+.fave-viewer-inner img { max-width: 100%; max-height: 74vh; border-radius: 14px; background: var(--cream); }
+.fave-viewer-inner h3 { color: #fff; margin: 12px 0 8px; }
+.fave-viewer-inner .lightbox-actions { justify-content: center; }
+.fave-viewer .lightbox-close { top: -4px; right: -4px; }
 .fave-card.noimg .art-imgwrap { display: none; }
 .fave-thumb-ph { width: 44px; height: 44px; border-radius: 8px; background: var(--cream); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .fave-thumb-ph .ic-svg { width: 1.3rem; height: 1.3rem; }

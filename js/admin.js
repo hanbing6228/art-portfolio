@@ -18,12 +18,7 @@
     Cloud.onAuth(function (user) {
       gear.classList.toggle("owner-on", !!user);
     });
-    // a link shared into the app → open the Add-favorite flow once auth resolves
-    if (window.SHARED_FAV) {
-      pendingShare = window.SHARED_FAV; window.SHARED_FAV = null;
-      var handled = false;
-      Cloud.onAuth(function () { if (handled) return; handled = true; openAdmin(); });
-    }
+    // (shared links are handled by the Favorites page's ➕ dialog)
   });
 
   /* ---------- image resize ---------- */
@@ -49,7 +44,7 @@
   }
 
   /* ---------- overlay DOM ---------- */
-  var overlay, newAvatar = null, newArtImg = null, newFavImg = null, parsedImg = null, pendingShare = null;
+  var overlay, newAvatar = null, newArtImg = null, newFavImg = null, parsedImg = null, parsedArtImg = null, pendingShare = null;
 
   function buildOverlay() {
     overlay = document.createElement("div");
@@ -125,6 +120,8 @@
       // ---- add artwork ----
       '<div class="admin-section"><h3>Add artwork</h3>' +
       '<label class="tool-chip">Choose photo<input id="adArtFile" type="file" accept="image/*" hidden /></label>' +
+      '<div class="fav-add-row" style="margin-top:8px"><input id="adArtUrl" class="gb-input" placeholder="…or paste an image / page link" />' +
+      '<button class="tool-chip" id="adArtFetch">Preview</button></div>' +
       '<img id="adArtPrev" class="admin-art-prev" hidden alt="preview" />' +
       field("adArtTitle", "Title", "") +
       field("adArtDesc", "Description", "") +
@@ -161,11 +158,22 @@
       newAvatar = await resizeToDataURL(f, 400, 0.85);
       $("#adAvatarPrev").src = newAvatar;
     });
-    // artwork picker
+    // artwork picker (upload or paste a link)
+    parsedArtImg = null;
     $("#adArtFile").addEventListener("change", async function (e) {
       var f = e.target.files[0]; if (!f) return;
-      newArtImg = await resizeToDataURL(f, 1000, 0.82);
+      newArtImg = await resizeToDataURL(f, 1000, 0.82); parsedArtImg = null;
       var prev = $("#adArtPrev"); prev.src = newArtImg; prev.hidden = false;
+    });
+    $("#adArtFetch").addEventListener("click", async function () {
+      var url = $("#adArtUrl").value.trim(); if (!url) { toast("Paste a link first"); return; }
+      var btn = $("#adArtFetch"); btn.textContent = "…"; btn.disabled = true;
+      var img = "";
+      if (/\.(jpe?g|png|gif|webp|avif|bmp)(\?|#|$)/i.test(url)) img = url;
+      else { var meta = await parseLink(url); img = meta && meta.image ? meta.image : ""; if (meta && meta.title && !$("#adArtTitle").value) $("#adArtTitle").value = meta.title; }
+      btn.textContent = "Preview"; btn.disabled = false;
+      if (img) { parsedArtImg = img; newArtImg = null; var pv = $("#adArtPrev"); pv.src = img; pv.hidden = false; toast("Image ready!"); }
+      else toast("Couldn't get an image from that link");
     });
     // favorite: paste-link preview + optional manual upload
     parsedImg = null;
@@ -254,21 +262,22 @@
   }
 
   async function addArtwork() {
-    if (!newArtImg) { toast("Choose a photo first"); return; }
+    var img = newArtImg || parsedArtImg;
+    if (!img) { toast("Add a photo or paste a link first"); return; }
     var btn = $("#adAddArt"); btn.textContent = "Adding…";
     var art = {
       title: $("#adArtTitle").value.trim() || "Untitled",
       desc: $("#adArtDesc").value.trim(),
       tags: $("#adArtTags").value.split(",").map(function (x) { return x.trim(); }).filter(Boolean),
       aspect: $("#adArtAspect").value,
-      img: newArtImg,
+      img: img,
     };
     var id = await Cloud.addArtwork(art);
     btn.textContent = "Add artwork";
     if (id) {
       toast("Artwork added!");
-      // reset form
-      newArtImg = null; $("#adArtPrev").hidden = true; $("#adArtTitle").value = ""; $("#adArtDesc").value = ""; $("#adArtTags").value = "";
+      newArtImg = null; parsedArtImg = null; $("#adArtPrev").hidden = true;
+      $("#adArtUrl").value = ""; $("#adArtTitle").value = ""; $("#adArtDesc").value = ""; $("#adArtTags").value = "";
       await refreshArtworks();
     } else toast("Add failed: " + (window.Cloud.lastError || "check Firestore rules"));
   }

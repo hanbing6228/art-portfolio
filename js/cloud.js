@@ -89,7 +89,7 @@
       try {
         var q = F.query(F.collection(db, "favorites"), F.orderBy("created", "desc"));
         var snap = await F.getDocs(q);
-        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, url: x.url || "", title: x.title || "", note: x.note || "", img: x.img || "" }; });
+        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, url: x.url || "", title: x.title || "", note: x.note || "", img: x.img || "", tags: x.tags || [] }; });
       } catch (e) { console.warn("[cloud] favorites load:", e.message || e); return null; }
     },
     async addFavorite(obj) {
