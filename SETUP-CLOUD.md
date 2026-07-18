@@ -43,6 +43,14 @@ service cloud.firestore {
     match /presence/{id}  { allow read, write: if true; }
     match /reactions/{id} { allow read: if true; allow create: if true; }
 
+    // Submitted finished drawings (the "Done — submit" button)
+    match /submissions/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.img is string;
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
     // Profile, artworks & favorites: anyone can READ, only the signed-in owner can WRITE
     match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
     match /artworks/{artId} { allow read: if true; allow write: if request.auth != null; }

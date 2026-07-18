@@ -225,6 +225,7 @@
     $("#boardLike").addEventListener("click", function () { if (window.Cloud) Cloud.like(BOARD_LIKE_ID); });
     var gal = $("#boardGallery"); if (gal) gal.addEventListener("click", showGallery);
     var inv = $("#boardInvite"); if (inv) inv.addEventListener("click", invite);
+    var sub = $("#boardSubmit"); if (sub) sub.addEventListener("click", submitDrawing);
     $$(".board-mode-btn").forEach(function (b) { b.addEventListener("click", function () { setBoardMode(b.dataset.bmode); }); });
   }
   // share a link that drops a friend straight into the live board
@@ -234,12 +235,37 @@
     else { try { navigator.clipboard.writeText(url); toast("Invite link copied — send it to a friend!"); } catch (e) { toast(url); } }
   }
 
-  /* ---------- gallery view: everyone's drawings side by side ---------- */
-  function showGallery() {
+  /* ---------- submit a finished drawing (works across devices) ---------- */
+  function downscale(cv, maxDim, q) {
+    var r = cv.getBoundingClientRect ? cv.getBoundingClientRect() : { width: cv.width, height: cv.height };
+    var w = cv.width, h = cv.height;
+    var scale = Math.min(1, maxDim / Math.max(w, h));
+    var t = document.createElement("canvas"); t.width = Math.max(1, Math.round(w * scale)); t.height = Math.max(1, Math.round(h * scale));
+    var tc = t.getContext("2d"); tc.fillStyle = "#fff"; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(cv, 0, 0, t.width, t.height);
+    return t.toDataURL("image/jpeg", q || 0.8);
+  }
+  async function submitDrawing() {
+    if (!canvas) return;
+    var url;
+    try { url = downscale(canvas, 700, 0.8); } catch (e) { toast("Couldn't read the canvas"); return; }
+    var btn = $("#boardSubmit"); if (btn) { btn.disabled = true; btn.textContent = "Submitting…"; }
+    var name = store.get("chatName", "") || "Artist";
+    var ok = (window.Cloud && Cloud.addSubmission) ? await Cloud.addSubmission(name, url) : false;
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS.check) || "") + "</span> Done — submit"; }
+    toast(ok ? "Submitted! 🎉 Everyone can see it now" : "Submit failed: " + (window.Cloud && window.Cloud.lastError || "check rules"));
+    showGallery();
+  }
+
+  /* ---------- gallery view: everyone's submitted drawings ---------- */
+  async function showGallery() {
     var items = [];
-    try { if (canvas) items.push({ name: "You", url: canvas.toDataURL() }); } catch (e) {}
+    try { if (canvas) items.push({ name: "You (now)", url: canvas.toDataURL() }); } catch (e) {}
+    if (window.Cloud && Cloud.listSubmissions) {
+      var subs = await Cloud.listSubmissions();
+      (subs || []).forEach(function (s) { if (s.img) items.push({ name: s.name || "Friend", url: s.img }); });
+    }
     Object.keys(others).forEach(function (k) {
-      try { items.push({ name: "Friend", url: others[k].win.querySelector(".peer-canvas").toDataURL() }); } catch (e) {}
+      try { items.push({ name: "Friend (live)", url: others[k].win.querySelector(".peer-canvas").toDataURL() }); } catch (e) {}
     });
     var ov = document.getElementById("boardGalleryOverlay");
     if (!ov) {

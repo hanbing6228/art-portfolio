@@ -69,6 +69,8 @@ body {
 }
 .topbar-title { font-weight: bold; font-size: 1.05rem; letter-spacing: 0.3px; color: #fff; background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 0; font-family: inherit; }
 .top-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.7); background: var(--cream); }
+.top-logo[hidden], .top-avatar[hidden] { display: none !important; }
+.top-logo .ic-svg { width: 1.5rem; height: 1.5rem; }
 .topbar-title:active .top-avatar { transform: scale(0.92); }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn {

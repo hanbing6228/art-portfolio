@@ -141,6 +141,21 @@
       return function () { cancelled = true; if (unsub) unsub(); };
     },
 
+    /* ---------- finished-drawing submissions (Draw Together) ---------- */
+    async addSubmission(name, img) {
+      if (!(await ok()) || !db) return false;
+      try { var ref = await F.addDoc(F.collection(db, "submissions"), { name: name || "Artist", img: img, created: F.serverTimestamp() }); return ref.id; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; console.warn("[cloud] submit:", e.message || e); return false; }
+    },
+    async listSubmissions() {
+      if (!(await ok()) || !db) return null;
+      try {
+        var q = F.query(F.collection(db, "submissions"), F.orderBy("created", "desc"), F.limit(30));
+        var snap = await F.getDocs(q);
+        return snap.docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, img: x.img }; });
+      } catch (e) { console.warn("[cloud] submissions load:", e.message || e); return null; }
+    },
+
     /* ---------- profile (owner writes) ---------- */
     async getProfile() {
       if (!(await ok()) || !db) return null;

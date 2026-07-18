@@ -17,7 +17,7 @@
 
   <!-- top bar -->
   <header class="topbar">
-    <button class="topbar-title" id="aboutEntry" aria-label="About me"><img id="topAvatar" class="top-avatar" alt="" /> <span id="siteTitle">Linrose</span></button>
+    <button class="topbar-title" id="aboutEntry" aria-label="About me"><span class="ic top-logo" data-icon="palette"></span><img id="topAvatar" class="top-avatar" alt="" hidden /> <span id="siteTitle">Linrose</span></button>
     <span class="topbar-actions">
       <button id="adminBtn" class="icon-btn" aria-label="Manage" title="Manage"><span class="ic" data-icon="gear"></span></button>
       <button id="themeToggle" class="icon-btn" aria-label="Toggle light/dark"><span class="ic" data-icon="moon"></span></button>
@@ -127,7 +127,8 @@
           <span class="chat-online" id="boardOnline"><span class="online-dot"></span> <span id="boardOnlineN">1</span> drawing</span>
           <span class="live-actions">
             <button class="tool-chip" id="boardClear"><span class="ic" data-icon="trash"></span> Clear</button>
-            <button class="tool-chip primary" id="boardSave"><span class="ic" data-icon="save"></span> Save</button>
+            <button class="tool-chip" id="boardSave"><span class="ic" data-icon="save"></span> Save</button>
+            <button class="tool-chip primary" id="boardSubmit"><span class="ic" data-icon="check"></span> Done — submit</button>
           </span>
         </div>
         <canvas id="boardCanvas" class="doodle-canvas"></canvas>

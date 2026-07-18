@@ -22,6 +22,10 @@
     Cloud.onAuth(function (user) {
       gear.classList.toggle("owner-on", !!user);
       gIsOwner = !!user; updateGalleryFab();
+      // top-left shows the app logo to visitors, the owner's avatar once signed in
+      var logo = document.querySelector(".top-logo"), av = document.getElementById("topAvatar");
+      if (logo) logo.hidden = !!user;
+      if (av) av.hidden = !user;
     });
     document.addEventListener("pagechange", function (e) { gOnGallery = e.detail === "gallery"; updateGalleryFab(); });
     // (shared links are handled by the Favorites page's ➕ dialog)
