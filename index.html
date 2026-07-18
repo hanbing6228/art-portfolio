@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5a8f4e" />
+  <meta name="description" content="A young artist's portfolio: printmaking, sketch, watercolor, clay & weaving." />
+  <title>My Art Portfolio</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icons/icon-192.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.svg" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- decorative background -->
+  <div class="bg-halftone" aria-hidden="true"></div>
+
+  <!-- top bar -->
+  <header class="topbar">
+    <span class="topbar-title">🎨 My Portfolio</span>
+    <button id="themeToggle" class="icon-btn" aria-label="Toggle light/dark">🌙</button>
+  </header>
+
+  <main id="app">
+    <!-- ============ HOME ============ -->
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="avatar-wrap" id="avatarWrap">
+          <img id="avatarImg" class="avatar" alt="My avatar" />
+          <span class="sparkle s1">✦</span><span class="sparkle s2">✦</span><span class="sparkle s3">✦</span>
+        </div>
+        <h1 id="heroName" class="hero-name">My Name</h1>
+        <p id="heroTagline" class="hero-tagline">Young Artist & Maker</p>
+        <div class="badges">
+          <span class="badge" id="ageBadge">🎂 Age 12</span>
+          <span class="badge">📚 Manga Lover</span>
+          <span class="badge">🌱 Green Fan</span>
+        </div>
+      </div>
+
+      <div class="card obsession-card">
+        <div class="obsession-label">💚 Currently obsessed with</div>
+        <div class="obsession-title" id="obsessionTitle">Omniscient Reader's Viewpoint</div>
+        <div class="obsession-note" id="obsessionNote"></div>
+      </div>
+
+      <div class="quick-links" id="quickLinks"></div>
+    </section>
+
+    <!-- ============ GALLERY ============ -->
+    <section id="gallery" class="page">
+      <h2 class="page-title">My Work ✨</h2>
+      <div class="filters" id="filters"></div>
+      <div class="grid" id="galleryGrid"></div>
+    </section>
+
+    <!-- ============ DOODLE ============ -->
+    <section id="doodle" class="page">
+      <h2 class="page-title">Doodle Pad 🖍️</h2>
+      <p class="page-sub">Draw with your finger, then save it!</p>
+      <div class="doodle-tools" id="doodleColors"></div>
+      <div class="doodle-tools">
+        <label class="tool-chip">Brush <input type="range" id="brushSize" min="2" max="40" value="8" /></label>
+        <button class="tool-chip" id="eraserBtn">🧽 Eraser</button>
+        <button class="tool-chip" id="clearBtn">🗑️ Clear</button>
+        <button class="tool-chip primary" id="saveDoodle">💾 Save</button>
+      </div>
+      <canvas id="doodleCanvas" class="doodle-canvas"></canvas>
+    </section>
+
+    <!-- ============ QUIZ ============ -->
+    <section id="quiz" class="page">
+      <h2 class="page-title">Fun Quiz 🧩</h2>
+      <p class="page-sub">How well do you know me & ORV?</p>
+      <div id="quizArea"></div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="page">
+      <h2 class="page-title">About Me 🌿</h2>
+      <div class="card about-card" id="aboutText"></div>
+      <div class="chips" id="funFacts"></div>
+      <div class="card">
+        <h3 class="card-h">Leave me a message 💌</h3>
+        <div class="guestbook-form">
+          <input id="gbName" class="gb-input" maxlength="24" placeholder="Your name" />
+          <textarea id="gbMsg" class="gb-input" maxlength="200" placeholder="Say something nice about my art!"></textarea>
+          <button id="gbSend" class="tool-chip primary">Send 💚</button>
+        </div>
+        <div id="guestbookList" class="guestbook-list"></div>
+      </div>
+      <div class="share-row">
+        <button class="tool-chip primary" id="shareSite">📤 Share my portfolio</button>
+      </div>
+      <p class="footer-note">Made with 💚 by a young artist • <span id="year"></span></p>
+    </section>
+  </main>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav class="bottomnav" id="bottomnav">
+    <button class="nav-btn active" data-target="home"><span>🏠</span>Home</button>
+    <button class="nav-btn" data-target="gallery"><span>🖼️</span>Gallery</button>
+    <button class="nav-btn" data-target="doodle"><span>🖍️</span>Doodle</button>
+    <button class="nav-btn" data-target="quiz"><span>🧩</span>Quiz</button>
+    <button class="nav-btn" data-target="about"><span>🌿</span>About</button>
+  </nav>
+
+  <!-- ============ LIGHTBOX ============ -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-inner">
+      <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+      <img id="lightboxImg" alt="" />
+      <h3 id="lightboxTitle"></h3>
+      <p id="lightboxDesc"></p>
+      <div class="lightbox-actions">
+        <button class="tool-chip" id="lightboxLike">🤍 <span id="lightboxLikeCount">0</span></button>
+        <button class="tool-chip" id="lightboxShare">📤 Share</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/gallery.js"></script>
+  <script src="js/doodle.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/guestbook.js"></script>
+</body>
+</html>
