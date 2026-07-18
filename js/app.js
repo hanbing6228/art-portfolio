@@ -177,6 +177,22 @@
     }
   }
 
+  /* ---------- Share target: a link shared into the app ---------- */
+  function initShareTarget() {
+    try {
+      var q = new URLSearchParams(location.search);
+      var url = q.get("url") || "";
+      var text = q.get("text") || "";
+      var title = q.get("title") || "";
+      if (!url && text) { var m = text.match(/https?:\/\/\S+/); if (m) url = m[0]; }
+      if (url) {
+        window.SHARED_FAV = { url: url, title: title || "" };
+        history.replaceState({}, "", location.pathname); // don't re-trigger on refresh
+        goTo("favorites");
+      }
+    } catch (e) {}
+  }
+
   /* ---------- PWA service worker ---------- */
   function initPWA() {
     if ("serviceWorker" in navigator) {
@@ -194,5 +210,6 @@
     initSparkles();
     initShareButton();
     initPWA();
+    initShareTarget();
   });
 })();

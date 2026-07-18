@@ -18,6 +18,12 @@
     Cloud.onAuth(function (user) {
       gear.classList.toggle("owner-on", !!user);
     });
+    // a link shared into the app → open the Add-favorite flow once auth resolves
+    if (window.SHARED_FAV) {
+      pendingShare = window.SHARED_FAV; window.SHARED_FAV = null;
+      var handled = false;
+      Cloud.onAuth(function () { if (handled) return; handled = true; openAdmin(); });
+    }
   });
 
   /* ---------- image resize ---------- */
@@ -43,7 +49,7 @@
   }
 
   /* ---------- overlay DOM ---------- */
-  var overlay, newAvatar = null, newArtImg = null, newFavImg = null;
+  var overlay, newAvatar = null, newArtImg = null, newFavImg = null, parsedImg = null, pendingShare = null;
 
   function buildOverlay() {
     overlay = document.createElement("div");
@@ -131,13 +137,17 @@
       '<div class="admin-section"><h3>My artworks</h3><div id="adArtList" class="admin-art-list"></div></div>' +
       // ---- add favorite ----
       '<div class="admin-section"><h3>Add favorite</h3>' +
-      '<p class="page-sub" style="margin:0 0 10px">Collect anything you love — a Pinterest pin, a web page, a pretty image.</p>' +
-      field("adFavUrl", "Link (paste the page or image URL)", "") +
-      field("adFavTitle", "Title", "") +
-      field("adFavNote", "Note (optional)", "") +
-      '<label class="tool-chip">Upload an image<input id="adFavFile" type="file" accept="image/*" hidden /></label>' +
-      field("adFavImgUrl", "…or paste an image URL", "") +
+      '<p class="page-sub" style="margin:0 0 10px">Paste a link — I\'ll grab the picture automatically.</p>' +
+      '<div class="fav-add-row">' +
+      '<input id="adFavUrl" class="gb-input" placeholder="Paste a link (Pinterest, web, image…)" />' +
+      '<button class="tool-chip" id="adFavFetch">Get preview</button></div>' +
       '<img id="adFavPrev" class="admin-art-prev" hidden alt="preview" />' +
+      field("adFavTitle", "Title (auto-filled — you can edit)", "") +
+      field("adFavNote", "Note (optional)", "") +
+      '<details class="fav-more"><summary>More options</summary>' +
+      '<label class="tool-chip" style="margin-top:8px">Upload an image instead<input id="adFavFile" type="file" accept="image/*" hidden /></label>' +
+      field("adFavImgUrl", "…or paste an image URL", "") +
+      "</details>" +
       '<button class="tool-chip primary" id="adAddFav">Add favorite</button>' +
       "</div>" +
       // ---- existing favorites ----
@@ -157,7 +167,9 @@
       newArtImg = await resizeToDataURL(f, 1000, 0.82);
       var prev = $("#adArtPrev"); prev.src = newArtImg; prev.hidden = false;
     });
-    // favorite picker
+    // favorite: paste-link preview + optional manual upload
+    parsedImg = null;
+    $("#adFavFetch").addEventListener("click", fetchPreview);
     $("#adFavFile").addEventListener("change", async function (e) {
       var f = e.target.files[0]; if (!f) return;
       newFavImg = await resizeToDataURL(f, 1000, 0.82);
@@ -169,6 +181,44 @@
     $("#adSignOut").addEventListener("click", async function () { await Cloud.signOutOwner(); close(); toast("Signed out"); });
     renderArtList();
     renderFavList();
+
+    // if a link was shared into the app, prefill + auto-fetch its preview
+    if (pendingShare) {
+      var s = pendingShare; pendingShare = null;
+      $("#adFavUrl").value = s.url || "";
+      if (s.title && !$("#adFavTitle").value) $("#adFavTitle").value = s.title;
+      $("#adFavUrl").scrollIntoView({ behavior: "smooth", block: "center" });
+      if (s.url) fetchPreview();
+    }
+  }
+
+  /* ---------- link preview (paste a URL, auto-grab image + title) ---------- */
+  async function parseLink(url) {
+    try {
+      var r = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(url) + "&audio=false&video=false");
+      var j = await r.json();
+      if (j && j.status === "success" && j.data) {
+        var d = j.data;
+        return { image: (d.image && d.image.url) || (d.logo && d.logo.url) || "", title: d.title || "", desc: d.description || "" };
+      }
+    } catch (e) { console.warn("[fav] parse:", e.message || e); }
+    return null;
+  }
+  async function fetchPreview() {
+    var url = $("#adFavUrl").value.trim();
+    if (!url) { toast("Paste a link first"); return; }
+    var btn = $("#adFavFetch"); btn.textContent = "Loading…"; btn.disabled = true;
+    var meta = await parseLink(url);
+    btn.textContent = "Get preview"; btn.disabled = false;
+    if (meta) {
+      parsedImg = meta.image || null;
+      if (meta.image) { var prev = $("#adFavPrev"); prev.src = meta.image; prev.hidden = false; }
+      if (meta.title && !$("#adFavTitle").value) $("#adFavTitle").value = meta.title;
+      if (meta.desc && !$("#adFavNote").value) $("#adFavNote").value = meta.desc.slice(0, 120);
+      toast(meta.image ? "Preview loaded!" : "No image found — you can still save it");
+    } else {
+      toast("Couldn't read that link — you can still save it, or upload an image");
+    }
   }
 
   function field(id, label, val) {
@@ -250,7 +300,7 @@
   async function addFavorite() {
     var url = $("#adFavUrl").value.trim();
     var imgUrl = $("#adFavImgUrl").value.trim();
-    var img = newFavImg || imgUrl || "";
+    var img = newFavImg || parsedImg || imgUrl || "";
     if (!url && !img) { toast("Add a link or an image"); return; }
     var btn = $("#adAddFav"); btn.textContent = "Adding…";
     var fav = {
@@ -263,7 +313,7 @@
     btn.textContent = "Add favorite";
     if (id) {
       toast("Saved to favorites!");
-      newFavImg = null; $("#adFavPrev").hidden = true;
+      newFavImg = null; parsedImg = null; $("#adFavPrev").hidden = true;
       $("#adFavUrl").value = ""; $("#adFavTitle").value = ""; $("#adFavNote").value = ""; $("#adFavImgUrl").value = "";
       await refreshFaves();
     } else toast("Add failed — check sign-in");
