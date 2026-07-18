@@ -66,10 +66,12 @@
     return hexToRgba(color, a);
   }
   function widthFor(pressure) {
-    var mult = tool === "marker" ? 1.7 : tool === "highlighter" ? 2.8 : tool === "pencil" ? 0.55 : 1;
+    var mult = tool === "marker" ? 1.7 : tool === "highlighter" ? 2.8 : tool === "oil" ? 2.3 : tool === "ink" ? 1.5 : tool === "pencil" ? 0.55 : 1;
     var w = brush * mult;
     if (tool === "highlighter") return Math.max(3, w); // flat, chunky
     var pr = (pressure && pressure > 0 && pressure !== 0.5) ? pressure : 0.6; // pens/touch vary; mouse ~0.5
+    if (tool === "ink") return Math.max(1, w * (0.2 + 1.5 * pr));   // 毛笔: big thin↔thick range
+    if (tool === "oil") return Math.max(3, w * (0.8 + 0.4 * pr));    // 油画笔: fat, steadier
     return Math.max(1, w * (0.55 + 0.9 * pr));
   }
   // double-tap on the canvas undoes the last stroke
@@ -97,9 +99,22 @@
     e.preventDefault();
     var p = pos(e);
     movedDist += Math.abs(p.x - lastX) + Math.abs(p.y - lastY);
-    ctx.strokeStyle = strokeStyleFor(e.pressure);
-    ctx.lineWidth = widthFor(e.pressure);
-    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    var w = widthFor(e.pressure);
+    if (tool === "oil") {
+      // 油画笔: a few parallel bristle strokes for a dry, textured look
+      var dx = p.x - lastX, dy = p.y - lastY, len = Math.hypot(dx, dy) || 1;
+      var nx = -dy / len, ny = dx / len, base = strokeStyleFor(e.pressure);
+      for (var i = -1; i <= 1; i++) {
+        ctx.strokeStyle = i === 0 ? base : hexToRgba(color, 0.45);
+        ctx.lineWidth = w * (i === 0 ? 1 : 0.35);
+        var off = i * w * 0.32;
+        ctx.beginPath(); ctx.moveTo(lastX + nx * off, lastY + ny * off); ctx.lineTo(p.x + nx * off, p.y + ny * off); ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle = strokeStyleFor(e.pressure);
+      ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    }
     lastX = p.x; lastY = p.y;
   }
   function end() {
@@ -192,9 +207,11 @@
 
   /* ---------- timed drawing ---------- */
   var timerId = null, timerEnd = 0;
+  var TIMER_STEPS = [0, 1, 3, 5], timerStep = 0;
+  function cycleTimer() { timerStep = (timerStep + 1) % TIMER_STEPS.length; setTimer(TIMER_STEPS[timerStep]); }
   function setTimer(mins) {
     if (timerId) { clearInterval(timerId); timerId = null; }
-    $$(".timer-opt").forEach(function (b) { b.classList.toggle("active", +b.dataset.min === mins); });
+    var btn = $("#padTimerBtn"); if (btn) btn.classList.toggle("active", mins > 0);
     if (!mins) { showTimer(-1); toast("Timer off"); return; }
     timerEnd = Date.now() + mins * 60000;
     timerId = setInterval(tickTimer, 500); tickTimer();
@@ -220,7 +237,7 @@
   /* ---------- fullscreen canvas + draggable / collapsible toolbar ---------- */
   function stage() { return $("#doodleStage"); }
   function isFs() { var s = stage(); return s && s.classList.contains("fs"); }
-  function reflow() { setTimeout(function () { if (ready) setupCanvas(true); }, 70); }
+  function reflow() { setTimeout(function () { if (ready) setupCanvas(true); window.dispatchEvent(new Event("doodle-reflow")); }, 70); }
   function setFsIcon() {
     var b = $("#doodleFull"); if (!b) return;
     b.innerHTML = '<span class="ic">' + ((window.ICONS && ICONS[isFs() ? "collapse" : "expand"]) || "") + "</span>";
@@ -284,14 +301,12 @@
     var full = $("#doodleFull"); if (full) full.addEventListener("click", toggleFs);
     setFsIcon();
     initGrip();
-    $$(".timer-opt").forEach(function (b) { b.addEventListener("click", function () { setTimer(+b.dataset.min); }); });
-    // switching to "Together" leaves fullscreen and hides the button (live board
-    // manages its own sizing); switching back to solo re-enables it.
+    var tb = $("#padTimerBtn"); if (tb) tb.addEventListener("click", cycleTimer);
+    // both Solo and Together can go fullscreen
     $$(".mode-btn").forEach(function (b) {
       b.addEventListener("click", function () {
-        var live = b.dataset.mode === "live";
-        var s = stage(); if (s) s.classList.toggle("live-mode", live);
-        if (live) exitFs();
+        var s = stage(); if (s) s.classList.toggle("live-mode", b.dataset.mode === "live");
+        reflow();
       });
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isFs()) exitFs(); });

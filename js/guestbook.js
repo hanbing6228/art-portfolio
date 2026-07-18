@@ -23,9 +23,16 @@
     if (emojiPop) return;
     emojiPop = document.createElement("div");
     emojiPop.className = "emoji-pop"; emojiPop.hidden = true;
-    emojiPop.innerHTML = EMOJIS.map(function (e, i) {
-      return '<button class="emoji-tile" data-e="' + e + '" style="background:' + TILE[i % TILE.length] + '">' + e + "</button>";
-    }).join("");
+    if (window.FACES && FACES.length) {
+      // Snapchat-style flat faces; clicking drops the matching unicode emoji
+      emojiPop.innerHTML = FACES.map(function (f) {
+        return '<button class="emoji-tile face-tile" data-e="' + f.e + '">' + f.s + "</button>";
+      }).join("");
+    } else {
+      emojiPop.innerHTML = EMOJIS.map(function (e, i) {
+        return '<button class="emoji-tile" data-e="' + e + '" style="background:' + TILE[i % TILE.length] + '">' + e + "</button>";
+      }).join("");
+    }
     document.body.appendChild(emojiPop);
     emojiPop.addEventListener("click", function (ev) {
       var b = ev.target.closest(".emoji-tile"); if (!b || !emojiTarget) return;

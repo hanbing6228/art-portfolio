@@ -80,6 +80,8 @@
           <button class="pad-btn brush-btn active" data-brush="pen" title="Pen"><span class="ic" data-icon="doodle"></span></button>
           <button class="pad-btn brush-btn" data-brush="pencil" title="Pencil"><span class="ic" data-icon="pencil"></span></button>
           <button class="pad-btn brush-btn" data-brush="marker" title="Marker"><span class="ic" data-icon="brush"></span></button>
+          <button class="pad-btn brush-btn" data-brush="ink" title="Ink brush (毛笔)"><span class="ic" data-icon="inkbrush"></span></button>
+          <button class="pad-btn brush-btn" data-brush="oil" title="Oil brush (油画笔)"><span class="ic" data-icon="oil"></span></button>
           <button class="pad-btn brush-btn" data-brush="highlighter" title="Highlighter"><span class="ic" data-icon="highlighter"></span></button>
           <button class="pad-btn brush-btn" data-brush="eraser" title="Eraser"><span class="ic" data-icon="eraser"></span></button>
         </div>
@@ -97,16 +99,11 @@
           <div class="pad-pop" id="adjustPop" hidden>
             <label class="pad-slider">Size <input type="range" id="brushSize" min="2" max="48" value="8" /></label>
             <label class="pad-slider">Opacity <input type="range" id="brushOpacity" min="10" max="100" value="100" /></label>
-            <div class="pad-timer-row"><span class="pad-timer-label">Timed</span>
-              <button class="timer-opt active" data-min="0">Off</button>
-              <button class="timer-opt" data-min="1">1m</button>
-              <button class="timer-opt" data-min="3">3m</button>
-              <button class="timer-opt" data-min="5">5m</button>
-            </div>
           </div>
         </div>
 
         <div class="pad-seg pad-view">
+          <button class="pad-btn" id="padTimerBtn" title="Timed drawing (tap to cycle Off/1/3/5 min)"><span class="ic" data-icon="timer"></span></button>
           <button class="pad-btn" id="doodleFull" title="Fullscreen"><span class="ic" data-icon="expand"></span></button>
         </div>
       </div>
@@ -137,7 +134,7 @@
         <div class="sticker-bar" id="stickerBar"></div>
         <div class="board-social">
           <button class="tool-chip" id="boardLike"><span class="ic" data-icon="heart"></span> <span id="boardLikeN">0</span></button>
-          <span class="page-sub" style="margin:0">Comment about it in the About chat 💬</span>
+          <button class="tool-chip" id="boardGallery"><span class="ic" data-icon="gallery"></span> Show all</button>
         </div>
       </div>
       </div><!-- /doodle-stage -->

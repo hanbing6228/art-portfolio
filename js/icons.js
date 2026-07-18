@@ -208,6 +208,8 @@
     pencil: svg('<path d="M5 19l1.2-4.2L16 5a1.8 1.8 0 0 1 2.6 2.6L8.8 17.4 5 19Z" fill="' + C.tan + '" stroke="' + C.teal + '"/><path d="M14.2 6.8l2.6 2.6M5 19l1.6-1.6" stroke="' + C.teal + '"/>'),
     highlighter: svg('<path d="M6 20h6" stroke="' + C.tan + '"/><path d="M8 17l-1.5 1.5h3L18 9.5l-2.5-2.5L7 15.5Z" fill="' + C.cyan + '" stroke="' + C.teal + '"/><path d="M13.5 8.5l2.5 2.5" stroke="' + C.teal + '"/>'),
     download: svg('<path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14" stroke="' + C.teal + '"/>'),
+    inkbrush: svg('<path d="M15 3.4l5.6 5.6-2.2 2.2-5.6-5.6z" fill="' + C.tan + '" stroke="' + C.teal + '"/><path d="M12.6 5.6l5.8 5.8c-.7 2.3-2.8 5-5.5 6.7-1.6 1-3.8 1.8-6.4 2.2.4-2.6 1.2-4.8 2.2-6.4 1.7-2.7 4.4-4.8 6.7-5.5z" fill="' + C.teal + '" stroke="' + C.teal + '"/>'),
+    oil: svg('<path d="M4.5 20c.8-.9 1.5-2.3 1.7-3.4l2.9 2.9c-1.1.2-2.5.9-3.4 1.7-.5.5-1.7.5-1.7-.5 0-.3 0-.5.5-.7z" fill="' + C.tan + '" stroke="' + C.teal + '"/><rect x="9.5" y="4" width="5.4" height="7.4" rx="1.2" transform="rotate(45 12.2 7.7)" fill="' + C.blush + '" stroke="' + C.teal + '"/><path d="M9.6 11.2l3.2-3.2" stroke="' + C.teal + '"/>'),
     minimize: svg('<path d="M6 12h12"/>'),
     expand: svg('<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>'),
     collapse: svg('<path d="M9 4v3a2 2 0 0 1-2 2H4M15 4v3a2 2 0 0 0 2 2h3M9 20v-3a2 2 0 0 0-2-2H4M15 20v-3a2 2 0 0 1 2-2h3"/>'),
@@ -215,6 +217,32 @@
   };
 
   window.ICONS = ICONS;
+
+  /* ---- Snapchat-style flat face emojis (original art) ----
+     Each is a colored tile with a simple face. Used in the chat emoji picker;
+     clicking one drops the matching unicode emoji into the message. */
+  function F(bg, inner) {
+    return '<svg viewBox="0 0 40 40" class="face-svg" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="9" fill="' + bg + '"/>' + inner + "</svg>";
+  }
+  var FD = "#263238"; // face lines
+  var FB = { o: "#e8823a", y: "#f2b807", t: "#7cc6cc", p: "#f2a9b6", b: "#6cb7e6", g: "#8bc38a", r: "#e2564f", pu: "#a48fd0" };
+  var dot = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="1.9" fill="' + FD + '"/>'; };
+  window.FACES = [
+    { e: "😃", s: F(FB.o, dot(14.5, 16) + dot(25.5, 16) + '<path d="M12.5 22a7.5 6 0 0 0 15 0z" fill="' + FD + '"/>') },
+    { e: "😄", s: F(FB.y, dot(14.5, 16) + dot(25.5, 16) + '<path d="M13 22a7 6 0 0 0 14 0z" fill="' + FD + '"/><path d="M17.5 27.2h5a2.5 2.5 0 0 1-5 0z" fill="' + FB.r + '"/>') },
+    { e: "😉", s: F(FB.t, dot(14.5, 16) + '<path d="M23 16.5q2.5-2.2 5 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M14 24q6 4 12 0" stroke="' + FD + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>') },
+    { e: "😜", s: F(FB.y, dot(14.5, 15.5) + '<path d="M23 16q2.5-2.2 5 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M15 23q5 3 10 0z" fill="' + FD + '"/><path d="M20 26v3a2 2 0 0 0 3.2-1" fill="' + FB.r + '" stroke="' + FD + '" stroke-width="1.3"/>') },
+    { e: "😎", s: F(FB.y, '<rect x="9.5" y="13.5" width="8.5" height="6.2" rx="2.4" fill="' + FD + '"/><rect x="22" y="13.5" width="8.5" height="6.2" rx="2.4" fill="' + FD + '"/><path d="M18 16h4" stroke="' + FD + '" stroke-width="1.6"/><path d="M15 25.5q5 3.5 10 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/>') },
+    { e: "😍", s: F(FB.p, '<path d="M14.6 13.4c-1.6-1.6-4 .7-2 2.5L14.6 18l2-2.1c2-1.8-.4-4.1-2-2.5z" fill="' + FB.r + '"/><path d="M25.4 13.4c-1.6-1.6-4 .7-2 2.5L25.4 18l2-2.1c2-1.8-.4-4.1-2-2.5z" fill="' + FB.r + '"/><path d="M14 24q6 4 12 0" stroke="' + FD + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>') },
+    { e: "😂", s: F(FB.p, '<path d="M11 17q3-3.2 6 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M23 17q3-3.2 6 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M13 22a7 6 0 0 0 14 0z" fill="' + FD + '"/><path d="M8.5 17.5c-1.2 1.8-1.2 3.6 0 4.8 1.2-1.2 1.2-3 0-4.8z" fill="' + FB.t + '"/><path d="M31.5 17.5c1.2 1.8 1.2 3.6 0 4.8-1.2-1.2-1.2-3 0-4.8z" fill="' + FB.t + '"/>') },
+    { e: "😅", s: F(FB.p, dot(14.5, 16) + dot(25.5, 16) + '<path d="M13.5 22a6.5 5.5 0 0 0 13 0z" fill="' + FD + '"/><path d="M31 9.5c-1.3 1.9-1.3 3.7 0 5 1.3-1.3 1.3-3.1 0-5z" fill="' + FB.t + '"/>') },
+    { e: "😢", s: F(FB.b, '<path d="M11.5 14l5.5 2M28.5 14l-5.5 2" stroke="' + FD + '" stroke-width="2" fill="none" stroke-linecap="round"/>' + dot(14.5, 18) + dot(25.5, 18) + '<path d="M15 27q5-4 10 0" stroke="' + FD + '" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M14.5 20.5c-1.2 1.8-1.2 3.6 0 4.8 1.2-1.2 1.2-3 0-4.8z" fill="' + FB.b + '" stroke="' + FD + '" stroke-width="1"/>') },
+    { e: "😐", s: F(FB.y, '<path d="M12 16h5M23 16h5" stroke="' + FD + '" stroke-width="2.2" stroke-linecap="round"/><path d="M14 25h12" stroke="' + FD + '" stroke-width="2.2" stroke-linecap="round"/>') },
+    { e: "😵", s: F(FB.t, '<path d="M12 14l4 4M16 14l-4 4M24 14l4 4M28 14l-4 4" stroke="' + FD + '" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="26" r="3" fill="' + FD + '"/>') },
+    { e: "😝", s: F(FB.g, '<path d="M12 15l4.5 1.7-4.5 1.7M28 15l-4.5 1.7 4.5 1.7" stroke="' + FD + '" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 23q5 3 10 0z" fill="' + FD + '"/><path d="M19.5 26v3.2a2 2 0 0 0 3.2-1" fill="' + FB.r + '" stroke="' + FD + '" stroke-width="1.3"/>') },
+    { e: "😶", s: F(FB.pu, dot(14.5, 17) + dot(25.5, 17) + '<path d="M16 25h8" stroke="' + FD + '" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>') },
+    { e: "😬", s: F(FB.r, dot(14.5, 15.5) + dot(25.5, 15.5) + '<rect x="12.5" y="21.5" width="15" height="6.5" rx="1.6" fill="#fff" stroke="' + FD + '" stroke-width="1.6"/><path d="M20 21.5v6.5M16.3 21.5v6.5M23.7 21.5v6.5" stroke="' + FD + '" stroke-width="1.1"/>') },
+  ];
 
   window.icon = function (name, cls) {
     var s = ICONS[name] || "";

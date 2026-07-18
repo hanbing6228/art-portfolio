@@ -218,8 +218,36 @@
       catch (e) { toast("Couldn't save"); }
     });
     $("#boardLike").addEventListener("click", function () { if (window.Cloud) Cloud.like(BOARD_LIKE_ID); });
+    var gal = $("#boardGallery"); if (gal) gal.addEventListener("click", showGallery);
     $$(".board-mode-btn").forEach(function (b) { b.addEventListener("click", function () { setBoardMode(b.dataset.bmode); }); });
   }
+
+  /* ---------- gallery view: everyone's drawings side by side ---------- */
+  function showGallery() {
+    var items = [];
+    try { if (canvas) items.push({ name: "You", url: canvas.toDataURL() }); } catch (e) {}
+    Object.keys(others).forEach(function (k) {
+      try { items.push({ name: "Friend", url: others[k].win.querySelector(".peer-canvas").toDataURL() }); } catch (e) {}
+    });
+    var ov = document.getElementById("boardGalleryOverlay");
+    if (!ov) {
+      ov = document.createElement("div"); ov.id = "boardGalleryOverlay"; ov.className = "board-gallery"; ov.hidden = true;
+      document.body.appendChild(ov);
+      ov.addEventListener("click", function (e) { if (e.target === ov || (e.target.closest && e.target.closest(".bg-close"))) ov.hidden = true; });
+    }
+    ov.innerHTML =
+      '<div class="bg-inner"><div class="bg-head"><b>Everyone’s drawings</b>' +
+      '<button class="bg-close" aria-label="Close">' + ((window.ICONS && ICONS.close) || "x") + "</button></div>" +
+      '<div class="bg-grid">' +
+      items.map(function (it) { return '<figure class="bg-item"><img src="' + it.url + '" alt="" /><figcaption>' + it.name + "</figcaption></figure>"; }).join("") +
+      "</div></div>";
+    ov.hidden = false;
+  }
+
+  // re-fit the board when it changes size (e.g. entering/leaving fullscreen)
+  function refit() { if (active) { setup(); fullRender(); } }
+  window.addEventListener("doodle-reflow", refit);
+  var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(refit, 250); });
 
   document.addEventListener("DOMContentLoaded", function () {
     var liveBtn = $("#liveModeBtn");
