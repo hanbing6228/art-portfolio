@@ -76,10 +76,11 @@
   }
   async function unlist(id) {
     if (!confirm("Take this out of your shop?")) return;
-    await Cloud.unlistItem(id); toast("Unlisted");
+    await Cloud.unlistItem(id, me); toast("Unlisted");
   }
   async function cashout() {
     var c = wallet.coins || 0;
+    if (window.Cloud && Cloud.requestCashout) Cloud.requestCashout(me, myName, c);
     alert("💡 Ask a grown-up!\n\nYou have " + c + " coins. In this practice shop, coins stay in the app to keep playing.\n\nWhen real cash-out is turned on, a grown-up will approve it — the coins never turn into money by themselves.");
   }
 
@@ -127,11 +128,10 @@
     if (started) return; started = true;
     me = cid(); myName = store.get("chatName", "") || "Me";
     var w = await Cloud.ensureWallet(me, myName);
-    if (w) { wallet = w; wallet.owned = wallet.owned || {}; renderWallet(); }
-    // once-a-day creativity bonus so there are always coins to play with
-    var today = new Date().toDateString ? tryDay() : null;
-    var last = store.get("shopBonusDay", "");
-    if (today && last !== today) { store.set("shopBonusDay", today); await Cloud.addCoins(me, 10, myName); toast("+10 daily creativity coins! 🎨"); trackEarn(10); }
+    if (w) {
+      wallet = { coins: w.coins || 0, owned: w.owned || {} }; renderWallet();
+      if (w.bonus > 0) { toast("+" + w.bonus + " daily creativity coins! 🎨"); trackEarn(w.bonus); }
+    }
     showWeek();
     var prev = wallet.coins || 0;
     unsubWallet = Cloud.watchWallet(me, function (w2) {

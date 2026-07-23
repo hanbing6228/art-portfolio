@@ -18,6 +18,16 @@
 
   function ok() { return readyPromise; }
 
+  // Call the server-authoritative economy backend. Returns {unavailable:true}
+  // if it isn't configured yet, so callers can fall back to the client path.
+  async function econ(action, payload) {
+    try {
+      var res = await fetch("/api/economy", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ action: action }, payload)) });
+      if (res.status === 503) return { unavailable: true };
+      return await res.json();
+    } catch (e) { return { unavailable: true }; }
+  }
+
   window.Cloud = {
     enabled: configured,
     ready: readyPromise,
@@ -111,13 +121,27 @@
        NOTE: balances are client-writable here for the demo. Before real use,
        move minting/transfers into a Cloud Function so coins can't be forged. */
     async ensureWallet(id, name) {
+      // preferred: server grants the once-a-day bonus and can't be forged
+      var r = await econ("wallet", { uid: id, name: name });
+      if (r && !r.unavailable && r.ok) return { coins: r.wallet.coins, owned: r.wallet.owned || {}, bonus: r.wallet.bonus || 0, backend: true };
+      // fallback: client Firestore (prototype)
       if (!(await ok()) || !db) return null;
       try {
         var ref = F.doc(db, "wallets", id);
         var d = await F.getDoc(ref);
-        if (!d.exists()) { await F.setDoc(ref, { coins: 50, name: name || "Artist", owned: {}, created: F.serverTimestamp() }); return { coins: 50, owned: {} }; }
-        return d.data();
+        var w = d.exists() ? d.data() : { coins: 50, owned: {} };
+        var today = new Date().toISOString().slice(0, 10), bonus = 0;
+        if (w.bonusDay !== today) { bonus = 10; w.coins = (w.coins || 0) + 10; w.bonusDay = today; }
+        await F.setDoc(ref, { coins: w.coins, name: name || "Artist", bonusDay: w.bonusDay, owned: w.owned || {} }, { merge: true });
+        return { coins: w.coins, owned: w.owned || {}, bonus: bonus, backend: false };
       } catch (e) { console.warn("[cloud] wallet:", e.message || e); return null; }
+    },
+    async requestCashout(id, name, coins) {
+      var r = await econ("cashout", { uid: id, name: name, coins: coins });
+      if (r && !r.unavailable) return !!r.ok;
+      if (!(await ok()) || !db) return false;
+      try { await F.addDoc(F.collection(db, "cashouts"), { uid: id, name: name, coins: coins, status: "pending", created: F.serverTimestamp() }); return true; }
+      catch (e) { return false; }
     },
     watchWallet(id, cb) {
       var unsub = null, cancelled = false;
@@ -144,16 +168,23 @@
       return function () { cancelled = true; if (unsub) unsub(); };
     },
     async listItem(obj) {
+      var r = await econ("list", { uid: obj.sellerId, name: obj.sellerName, title: obj.title, img: obj.img, price: obj.price });
+      if (r && !r.unavailable) { if (r.ok) return r.id; window.Cloud.lastError = r.error || "list failed"; return false; }
       if (!(await ok()) || !db) return false;
       try { var ref = await F.addDoc(F.collection(db, "shopItems"), Object.assign({ sales: 0, created: F.serverTimestamp() }, obj)); return ref.id; }
       catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
     },
-    async unlistItem(id) {
+    async unlistItem(id, uid) {
+      var r = await econ("unlist", { uid: uid || "", id: id });
+      if (r && !r.unavailable && r.ok) return true;
       if (!(await ok()) || !db) return false;
       try { await F.deleteDoc(F.doc(db, "shopItems", id)); return true; }
       catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
     },
     async buyItem(item, buyerId, buyerName) {
+      var r = await econ("buy", { uid: buyerId, id: item.id, name: buyerName });
+      if (r && !r.unavailable) { if (r.ok) return true; window.Cloud.lastError = r.error || "buy failed"; return false; }
+      // fallback: client Firestore increments (prototype)
       if (!(await ok()) || !db) return false;
       try {
         await F.setDoc(F.doc(db, "wallets", buyerId), { coins: F.increment(-item.price), name: buyerName || "Artist", owned: (function () { var o = {}; o[item.id] = true; return o; })() }, { merge: true });

@@ -51,10 +51,12 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
-    // Coin economy (PROTOTYPE — open so the demo works). Before real launch,
-    // move coin minting/transfers into a Cloud Function and lock these down.
-    match /wallets/{id}    { allow read, write: if true; }
-    match /shopItems/{id}  { allow read, write: if true; }
+    // Coin economy. With the server backend on (see "Coin backend" below),
+    // change the wallets/shopItems `write` to `if false` so ONLY the backend
+    // (Admin SDK) can move coins. Until then, keep them open for the prototype.
+    match /wallets/{id}    { allow read: if true; allow write: if true; }   // → write: if false once backend is on
+    match /shopItems/{id}  { allow read: if true; allow write: if true; }   // → write: if false once backend is on
+    match /cashouts/{id}   { allow read: if false; allow create: if true; allow update, delete: if false; }
 
     // Profile, artworks & favorites: anyone can READ, only the signed-in owner can WRITE
     match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
@@ -88,3 +90,25 @@ automatically shrunk in the browser before uploading, so they stay small.
 
 > Tap the gear again any time to manage more. Tap **Sign out** when done.
 > The gear only writes when you're signed in — visitors can't change anything.
+
+## 4. Coin backend (makes the Shop tamper-proof)
+
+The Shop works right away in "prototype" mode (coins are written from the
+browser). To make coins un-forgeable, turn on the server backend — it lives in
+`api/economy.js` and runs on Vercel, so it deploys automatically with the app.
+
+1. **Service account:** Firebase console → ⚙️ **Project settings → Service
+   accounts → Generate new private key**. This downloads a JSON file.
+2. **Give it to Vercel:** Vercel → your project → **Settings → Environment
+   Variables** → add:
+   - Name: `FIREBASE_SERVICE_ACCOUNT`
+   - Value: paste the **entire** JSON file contents
+   - Environments: Production + Preview
+   Then **Redeploy** (Deployments → ⋯ → Redeploy).
+3. **Lock the rules:** in the rules above, change the two economy lines to
+   `allow write: if false;` and **Publish**. Now coins can only move through the
+   server (which checks balances inside a transaction — no overspending, no
+   forging, no buying your own item twice).
+
+The app auto-detects the backend: if `FIREBASE_SERVICE_ACCOUNT` isn't set yet,
+it silently falls back to the prototype path, so nothing breaks in between.

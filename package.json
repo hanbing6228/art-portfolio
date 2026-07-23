@@ -1,0 +1,8 @@
+{
+  "name": "linrose",
+  "private": true,
+  "description": "Serverless dependencies for the /api functions (image grab, economy backend).",
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
