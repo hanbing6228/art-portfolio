@@ -103,7 +103,7 @@
   /* ---------- in-app image viewer ---------- */
   // Preview shows just the picture, fullscreen (no title / tags / details).
   function openViewer(f) {
-    if (f && f.img && window.openImageView) { openImageView(f.img); return; }
+    if (f && f.img && window.openImageView) { openImageView(f.img, f.title); return; }
   }
 
   /* ---------- owner: floating + button and add modal ---------- */

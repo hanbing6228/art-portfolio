@@ -401,7 +401,7 @@ body.doodle-fs-lock .chat-fab { display: none; }
 @keyframes flashRed { 50% { box-shadow: 0 0 0 5px rgba(229,72,77,0.8); } }
 
 /* image viewer actions (Save / Draw this) */
-.img-view-actions { position: fixed; bottom: calc(22px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 3; }
+.img-view-actions { position: fixed; bottom: calc(22px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; max-width: 92vw; gap: 10px; z-index: 3; }
 
 /* live board sub-mode toggle */
 .board-submode { display: flex; gap: 8px; margin-bottom: 10px; }

@@ -75,7 +75,7 @@
   };
 
   /* ---------- Fullscreen image viewer (image only, + Save / Draw this) ---------- */
-  window.openImageView = function (src) {
+  window.openImageView = function (src, title) {
     if (!src) return;
     var v = document.getElementById("imgView");
     if (!v) {
@@ -86,6 +86,7 @@
         '<img id="imgViewImg" alt="" referrerpolicy="no-referrer" />' +
         '<div class="img-view-actions">' +
         '<button class="tool-chip" id="imgViewSave">' + icon("download") + " Save</button>" +
+        '<button class="tool-chip" id="imgViewCard">' + icon("share") + " Share card</button>" +
         '<button class="tool-chip primary" id="imgViewDraw">' + icon("brush") + " Draw this</button>" +
         "</div>";
       document.body.appendChild(v);
@@ -94,9 +95,11 @@
       document.getElementById("imgViewClose").addEventListener("click", close);
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !v.hidden) close(); });
       document.getElementById("imgViewSave").addEventListener("click", function (e) { e.stopPropagation(); saveImageUrl(v.dataset.src); });
+      document.getElementById("imgViewCard").addEventListener("click", function (e) { e.stopPropagation(); if (window.makeShareCard) makeShareCard(v.dataset.src, v.dataset.title || "My artwork"); });
       document.getElementById("imgViewDraw").addEventListener("click", function (e) { e.stopPropagation(); close(); drawAlong(v.dataset.src); });
     }
     v.dataset.src = src;
+    v.dataset.title = title || "";
     document.getElementById("imgViewImg").src = src;
     v.hidden = false;
   };
