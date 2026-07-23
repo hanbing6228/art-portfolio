@@ -56,6 +56,7 @@
       '<img id="gaPrev" class="admin-art-prev" hidden alt="preview" />' +
       field("gaTitle", "Title", "") +
       field("gaDesc", "Description", "") +
+      area("gaStory", "The story behind it (optional)", "") +
       field("gaTags", "Tags (comma separated)", "") +
       '<label class="admin-label">Shape<select id="gaAspect" class="gb-input"><option value="square">Square</option><option value="tall">Tall</option><option value="wide">Wide</option></select></label>' +
       '<button class="tool-chip primary" id="gaAdd">Add artwork</button>' +
@@ -88,6 +89,7 @@
       var art = {
         title: $("#gaTitle").value.trim() || "Untitled",
         desc: $("#gaDesc").value.trim(),
+        story: $("#gaStory").value.trim(),
         tags: $("#gaTags").value.split(",").map(function (x) { return x.trim(); }).filter(Boolean),
         aspect: $("#gaAspect").value, img: img,
       };
@@ -100,7 +102,7 @@
   function openArtModal() {
     buildArtModal();
     gArtUpload = null; gArtParsed = null;
-    ["gaTitle", "gaDesc", "gaTags", "gaUrl"].forEach(function (id) { var el = $("#" + id); if (el) el.value = ""; });
+    ["gaTitle", "gaDesc", "gaStory", "gaTags", "gaUrl"].forEach(function (id) { var el = $("#" + id); if (el) el.value = ""; });
     $("#gaPrev").hidden = true;
     gModal.hidden = false;
   }

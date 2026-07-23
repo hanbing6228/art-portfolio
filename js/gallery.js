@@ -27,6 +27,9 @@
   var ARTWORKS_SRC = null; // set from cloud when the owner has added artworks
 
   function artworks() { return ARTWORKS_SRC || window.ARTWORKS || []; }
+  // The owner can add/edit the "story behind it" — but only on cloud-backed
+  // artworks (placeholders have no editable cloud doc).
+  function canEditStory() { return !!(ARTWORKS_SRC && window.Cloud && Cloud.isOwner()); }
 
   // Collect all tags used across artworks, most-common first.
   function allTags() {
@@ -146,10 +149,64 @@
         });
       });
     }
+    renderStory();
     updateLightboxLike();
     $("#lightbox").hidden = false;
   }
   function closeLightbox() { $("#lightbox").hidden = true; lightboxArt = null; }
+
+  /* ---------- "The story behind it" (read by all, editable by owner) ---------- */
+  function renderStory() {
+    var wrap = $("#lightboxStoryWrap");
+    if (!wrap || !lightboxArt) return;
+    var story = (lightboxArt.story || "").trim();
+    wrap.innerHTML = "";
+    if (story) {
+      var box = document.createElement("div");
+      box.className = "art-story";
+      box.innerHTML = '<div class="art-story-label">' + icon("book") + " The story behind it</div>" +
+        '<p class="art-story-text"></p>';
+      box.querySelector(".art-story-text").textContent = story;
+      wrap.appendChild(box);
+    }
+    if (canEditStory()) {
+      var btn = document.createElement("button");
+      btn.className = "tool-chip story-edit-btn";
+      btn.innerHTML = icon("pencil") + (story ? " Edit story" : " Add the story");
+      btn.addEventListener("click", openStoryEditor);
+      wrap.appendChild(btn);
+    }
+  }
+  function openStoryEditor() {
+    var wrap = $("#lightboxStoryWrap");
+    if (!wrap || !lightboxArt) return;
+    wrap.innerHTML =
+      '<textarea class="gb-input art-story-input" id="storyInput" rows="4" ' +
+      'placeholder="What inspired this? What was tricky? What are you proud of?"></textarea>' +
+      '<div class="story-editor-actions">' +
+      '<button class="tool-chip" id="storyCancel">Cancel</button>' +
+      '<button class="tool-chip primary" id="storySave">Save story</button></div>';
+    $("#storyInput").value = lightboxArt.story || "";
+    $("#storyInput").focus();
+    $("#storyCancel").addEventListener("click", renderStory);
+    $("#storySave").addEventListener("click", saveStory);
+  }
+  async function saveStory() {
+    if (!lightboxArt) return;
+    var txt = $("#storyInput").value.trim();
+    var btn = $("#storySave"); btn.textContent = "Saving…"; btn.disabled = true;
+    var ok = await Cloud.updateArtwork(lightboxArt.id, { story: txt });
+    if (ok) {
+      lightboxArt.story = txt;
+      var src = ARTWORKS_SRC || [];
+      for (var i = 0; i < src.length; i++) { if (src[i].id === lightboxArt.id) { src[i].story = txt; break; } }
+      toast("Story saved!");
+      renderStory();
+    } else {
+      btn.textContent = "Save story"; btn.disabled = false;
+      toast("Save failed: " + (window.Cloud && Cloud.lastError || "check Firestore rules"));
+    }
+  }
   function updateLightboxLike() {
     if (!lightboxArt) return;
     var liked = isLiked(lightboxArt.id);
@@ -195,6 +252,8 @@
     renderGrid();
     initLightbox();
     if (window.Cloud && Cloud.enabled) {
+      // reveal the owner's story-edit button the moment they sign in
+      if (Cloud.onAuth) Cloud.onAuth(function () { if (lightboxArt && !$("#lightbox").hidden) renderStory(); });
       // shared like counts
       Cloud.getLikeCounts().then(function (m) { if (m) { cloudCounts = m; renderGrid(); } });
       // owner-uploaded artworks replace the placeholders (only if any exist)
