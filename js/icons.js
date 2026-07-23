@@ -211,6 +211,8 @@
     inkbrush: svg('<path d="M15 3.4l5.6 5.6-2.2 2.2-5.6-5.6z" fill="' + C.tan + '" stroke="' + C.teal + '"/><path d="M12.6 5.6l5.8 5.8c-.7 2.3-2.8 5-5.5 6.7-1.6 1-3.8 1.8-6.4 2.2.4-2.6 1.2-4.8 2.2-6.4 1.7-2.7 4.4-4.8 6.7-5.5z" fill="' + C.teal + '" stroke="' + C.teal + '"/>'),
     oil: svg('<path d="M4.5 20c.8-.9 1.5-2.3 1.7-3.4l2.9 2.9c-1.1.2-2.5.9-3.4 1.7-.5.5-1.7.5-1.7-.5 0-.3 0-.5.5-.7z" fill="' + C.tan + '" stroke="' + C.teal + '"/><rect x="9.5" y="4" width="5.4" height="7.4" rx="1.2" transform="rotate(45 12.2 7.7)" fill="' + C.blush + '" stroke="' + C.teal + '"/><path d="M9.6 11.2l3.2-3.2" stroke="' + C.teal + '"/>'),
     minimize: svg('<path d="M6 12h12"/>'),
+    coin: svg('<circle cx="12" cy="12" r="8.5" fill="' + C.tan + '" stroke="' + C.teal + '"/><circle cx="12" cy="12" r="5.5" fill="' + C.cream + '" stroke="' + C.teal + '"/><path d="M12 9v6M10.4 10.2h2.6a1.4 1.4 0 0 1 0 2.8h-2.6M10.4 13h3" stroke="' + C.teal + '" stroke-width="1.4"/>'),
+    shop: svg('<path d="M4.5 9l1-4.5h13l1 4.5" fill="' + C.tan + '" stroke="' + C.teal + '"/><path d="M4.5 9h15v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z" fill="' + C.cream + '" stroke="' + C.teal + '"/><path d="M9 19v-5h6v5" stroke="' + C.teal + '"/>'),
     expand: svg('<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>'),
     collapse: svg('<path d="M9 4v3a2 2 0 0 1-2 2H4M15 4v3a2 2 0 0 0 2 2h3M9 20v-3a2 2 0 0 0-2-2H4M15 20v-3a2 2 0 0 1 2-2h3"/>'),
     resize: svg('<path d="M15 4h5v5M20 4l-6 6M9 20H4v-5M4 20l6-6"/>'),

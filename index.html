@@ -149,6 +149,31 @@
       <div id="quizArea"></div>
     </section>
 
+    <!-- ============ SHOP (coin economy) ============ -->
+    <section id="shop" class="page">
+      <h2 class="page-title">My Little Shop <span class="ic" data-icon="shop"></span></h2>
+      <p class="page-sub">Earn coins by creating, sell your art, run your own shop!</p>
+
+      <div class="wallet-card">
+        <div class="wallet-bal"><span class="ic" data-icon="coin"></span> <b id="walletCoins">0</b> coins</div>
+        <div class="wallet-week">This week: <b id="walletWeek">+0</b></div>
+        <button class="tool-chip" id="cashoutBtn"><span class="ic" data-icon="coin"></span> Cash out</button>
+      </div>
+
+      <div class="doodle-mode">
+        <button class="tool-chip shop-tab active" data-shop="market"><span class="ic" data-icon="shop"></span> Market</button>
+        <button class="tool-chip shop-tab" data-shop="mine"><span class="ic" data-icon="star"></span> My Shop</button>
+      </div>
+
+      <div id="shopMarketWrap">
+        <div class="grid" id="shopMarket"></div>
+      </div>
+      <div id="shopMineWrap" hidden>
+        <button class="tool-chip primary" id="shopListBtn" style="margin-bottom:12px"><span class="ic" data-icon="plus"></span> List an artwork for sale</button>
+        <div class="grid" id="shopMine"></div>
+      </div>
+    </section>
+
     <!-- ============ ABOUT ============ -->
     <section id="about" class="page">
       <h2 class="page-title">About Me <span class="ic" data-icon="leaf"></span></h2>
@@ -176,6 +201,7 @@
     <button class="nav-btn" data-target="favorites"><span class="ic" data-icon="star"></span>Faves</button>
     <button class="nav-btn" data-target="doodle"><span class="ic" data-icon="doodle"></span>Doodle</button>
     <button class="nav-btn" data-target="quiz"><span class="ic" data-icon="play"></span>Game</button>
+    <button class="nav-btn" data-target="shop"><span class="ic" data-icon="shop"></span>Shop</button>
   </nav>
 
   <!-- ============ LIGHTBOX ============ -->
@@ -207,6 +233,7 @@
   <script src="js/doodle.js"></script>
   <script src="js/collab.js"></script>
   <script src="js/quiz.js"></script>
+  <script src="js/shop.js"></script>
   <script src="js/guestbook.js"></script>
   <script src="js/music.js"></script>
   <script src="js/admin.js"></script>

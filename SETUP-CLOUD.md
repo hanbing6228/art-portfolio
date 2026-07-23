@@ -51,6 +51,11 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // Coin economy (PROTOTYPE — open so the demo works). Before real launch,
+    // move coin minting/transfers into a Cloud Function and lock these down.
+    match /wallets/{id}    { allow read, write: if true; }
+    match /shopItems/{id}  { allow read, write: if true; }
+
     // Profile, artworks & favorites: anyone can READ, only the signed-in owner can WRITE
     match /profile/{doc}    { allow read: if true; allow write: if request.auth != null; }
     match /artworks/{artId} { allow read: if true; allow write: if request.auth != null; }

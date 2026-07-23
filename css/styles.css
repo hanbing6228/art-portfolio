@@ -495,6 +495,23 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 .board-social { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
 .float-react.emoji { font-size: 2.6rem; line-height: 1; }
 
+/* ===== Shop / coin economy ===== */
+.wallet-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(135deg, var(--mid), var(--deep)); color: #fff; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.wallet-bal { font-size: 1.3rem; display: inline-flex; align-items: center; gap: 6px; }
+.wallet-bal .ic-svg { width: 1.5rem; height: 1.5rem; }
+.wallet-week { font-size: 0.85rem; opacity: 0.9; }
+.wallet-card #cashoutBtn { margin-left: auto; background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.5); color: #fff; }
+.shop-tab.active { background: var(--mid); color: #fff; border-color: var(--mid); }
+.shop-card .art-meta { padding: 8px 10px 10px; }
+.shop-row { display: flex; align-items: center; justify-content: space-between; margin: 4px 0; }
+.shop-price { display: inline-flex; align-items: center; gap: 3px; font-weight: bold; color: var(--deep); }
+.shop-price .ic-svg { width: 1.05rem; height: 1.05rem; }
+.shop-sales { font-size: 0.72rem; color: var(--muted); }
+.shop-seller { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.shop-buy { width: 100%; justify-content: center; }
+.shop-owned { display: inline-flex; align-items: center; gap: 4px; color: var(--mid); font-weight: bold; font-size: 0.85rem; }
+.shop-unlist { color: var(--muted); }
+
 /* ===== Quiz ===== */
 .quiz-q { font-size: 1.15rem; font-weight: bold; color: var(--deep); margin-bottom: 14px; }
 .quiz-opts { display: grid; gap: 10px; }

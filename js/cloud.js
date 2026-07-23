@@ -107,6 +107,62 @@
     async like(artId) { await bumpLike(artId, 1); },
     async unlike(artId) { await bumpLike(artId, -1); },
 
+    /* ---------- coin economy: wallets + shop (PROTOTYPE) ----------
+       NOTE: balances are client-writable here for the demo. Before real use,
+       move minting/transfers into a Cloud Function so coins can't be forged. */
+    async ensureWallet(id, name) {
+      if (!(await ok()) || !db) return null;
+      try {
+        var ref = F.doc(db, "wallets", id);
+        var d = await F.getDoc(ref);
+        if (!d.exists()) { await F.setDoc(ref, { coins: 50, name: name || "Artist", owned: {}, created: F.serverTimestamp() }); return { coins: 50, owned: {} }; }
+        return d.data();
+      } catch (e) { console.warn("[cloud] wallet:", e.message || e); return null; }
+    },
+    watchWallet(id, cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        unsub = F.onSnapshot(F.doc(db, "wallets", id), function (d) { cb(d.exists() ? d.data() : { coins: 0, owned: {} }); }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+    async addCoins(id, delta, name) {
+      if (!(await ok()) || !db) return false;
+      try { await F.setDoc(F.doc(db, "wallets", id), { coins: F.increment(delta), name: name || "Artist" }, { merge: true }); return true; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
+    },
+    watchShop(cb) {
+      var unsub = null, cancelled = false;
+      readyPromise.then(function (r) {
+        if (cancelled || !r || !db) return;
+        var q = F.query(F.collection(db, "shopItems"), F.orderBy("created", "desc"), F.limit(80));
+        unsub = F.onSnapshot(q, function (snap) {
+          cb(snap.docs.map(function (d) { var x = d.data(); return { id: d.id, sellerId: x.sellerId, sellerName: x.sellerName, title: x.title, img: x.img, price: x.price, sales: x.sales || 0 }; }));
+        }, function () {});
+      });
+      return function () { cancelled = true; if (unsub) unsub(); };
+    },
+    async listItem(obj) {
+      if (!(await ok()) || !db) return false;
+      try { var ref = await F.addDoc(F.collection(db, "shopItems"), Object.assign({ sales: 0, created: F.serverTimestamp() }, obj)); return ref.id; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
+    },
+    async unlistItem(id) {
+      if (!(await ok()) || !db) return false;
+      try { await F.deleteDoc(F.doc(db, "shopItems", id)); return true; }
+      catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
+    },
+    async buyItem(item, buyerId, buyerName) {
+      if (!(await ok()) || !db) return false;
+      try {
+        await F.setDoc(F.doc(db, "wallets", buyerId), { coins: F.increment(-item.price), name: buyerName || "Artist", owned: (function () { var o = {}; o[item.id] = true; return o; })() }, { merge: true });
+        await F.setDoc(F.doc(db, "wallets", item.sellerId), { coins: F.increment(item.price) }, { merge: true });
+        await F.setDoc(F.doc(db, "shopItems", item.id), { sales: F.increment(1) }, { merge: true });
+        return true;
+      } catch (e) { window.Cloud.lastError = e.code || e.message; return false; }
+    },
+
     /* ---------- shared live board (collaborative drawing) ---------- */
     watchBoard(cb) {
       var unsub = null, cancelled = false;
