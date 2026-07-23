@@ -24,7 +24,13 @@
   }
 
   var currentTag = "all";
+  var viewMode = store.get("galleryView", "wall"); // "wall" | "portfolio"
   var ARTWORKS_SRC = null; // set from cloud when the owner has added artworks
+
+  // "2026 · Watercolor" — either part optional
+  function metaLine(art) {
+    return [art.year, art.medium].filter(function (x) { return x && String(x).trim(); }).join(" · ");
+  }
 
   function artworks() { return ARTWORKS_SRC || window.ARTWORKS || []; }
   // The owner can add/edit the "story behind it" — but only on cloud-backed
@@ -75,19 +81,23 @@
 
   function renderGrid() {
     var grid = $("#galleryGrid");
+    grid.className = "grid" + (viewMode === "portfolio" ? " portfolio-grid" : "");
     grid.innerHTML = "";
     var items = visibleArtworks();
     if (!items.length) {
       grid.innerHTML = '<p class="gb-empty">Nothing tagged that yet — try another tag!</p>';
       return;
     }
+    if (viewMode === "portfolio") { renderPortfolio(grid, items); return; }
     items.forEach(function (art) {
       var card = document.createElement("div");
       card.className = "art-card aspect-" + (art.aspect || "square");
+      var meta = metaLine(art);
       card.innerHTML =
         '<div class="art-imgwrap"><img src="' + art.img + '" alt="' + art.title + '" loading="lazy" /></div>' +
         '<div class="art-meta">' +
         '<div class="art-title">' + art.title + "</div>" +
+        (meta ? '<div class="art-metaline">' + esc(meta) + "</div>" : "") +
         '<div class="art-tags">' + tagChips(art) + "</div>" +
         '<div class="art-actions">' +
         '<button class="like-btn ' + (isLiked(art.id) ? "liked" : "") + '" data-id="' + art.id + '">' +
@@ -128,6 +138,24 @@
     });
   }
 
+  // Clean, professional layout: big image, title, "year · medium" — no likes,
+  // tags or coins. This is the view you'd screenshot/print for a real portfolio.
+  function renderPortfolio(grid, items) {
+    items.forEach(function (art) {
+      var meta = metaLine(art);
+      var card = document.createElement("figure");
+      card.className = "pf-card";
+      card.innerHTML =
+        '<div class="pf-imgwrap"><img src="' + art.img + '" alt="' + esc(art.title) + '" loading="lazy" /></div>' +
+        '<figcaption class="pf-cap"><span class="pf-title">' + esc(art.title) + "</span>" +
+        (meta ? '<span class="pf-meta">' + esc(meta) + "</span>" : "") + "</figcaption>";
+      card.addEventListener("click", function () { openLightbox(art); });
+      grid.appendChild(card);
+    });
+  }
+
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
+
   /* ---------- Lightbox ---------- */
   var lightboxArt = null;
   function openLightbox(art) {
@@ -135,6 +163,8 @@
     $("#lightboxImg").src = art.img;
     $("#lightboxImg").alt = art.title;
     $("#lightboxTitle").textContent = art.title;
+    var ml = metaLine(art), me = $("#lightboxMeta");
+    if (me) { me.textContent = ml; me.hidden = !ml; }
     $("#lightboxDesc").textContent = art.desc || "";
     var lt = $("#lightboxTags");
     if (lt) {
@@ -170,9 +200,10 @@
       wrap.appendChild(box);
     }
     if (canEditStory()) {
+      var has = story || metaLine(lightboxArt);
       var btn = document.createElement("button");
       btn.className = "tool-chip story-edit-btn";
-      btn.innerHTML = icon("pencil") + (story ? " Edit story" : " Add the story");
+      btn.innerHTML = icon("pencil") + (has ? " Edit details" : " Add year / medium / story");
       btn.addEventListener("click", openStoryEditor);
       wrap.appendChild(btn);
     }
@@ -181,29 +212,43 @@
     var wrap = $("#lightboxStoryWrap");
     if (!wrap || !lightboxArt) return;
     wrap.innerHTML =
+      '<div class="detail-editor">' +
+      '<div class="detail-row">' +
+      '<label class="detail-field"><span>Year</span><input class="gb-input" id="yearInput" placeholder="2026" /></label>' +
+      '<label class="detail-field"><span>Medium</span><input class="gb-input" id="mediumInput" placeholder="Watercolor" /></label>' +
+      "</div>" +
       '<textarea class="gb-input art-story-input" id="storyInput" rows="4" ' +
-      'placeholder="What inspired this? What was tricky? What are you proud of?"></textarea>' +
+      'placeholder="The story behind it — what inspired this? what was tricky? what are you proud of?"></textarea>' +
       '<div class="story-editor-actions">' +
       '<button class="tool-chip" id="storyCancel">Cancel</button>' +
-      '<button class="tool-chip primary" id="storySave">Save story</button></div>';
+      '<button class="tool-chip primary" id="storySave">Save details</button></div>' +
+      "</div>";
+    $("#yearInput").value = lightboxArt.year || "";
+    $("#mediumInput").value = lightboxArt.medium || "";
     $("#storyInput").value = lightboxArt.story || "";
-    $("#storyInput").focus();
+    $("#yearInput").focus();
     $("#storyCancel").addEventListener("click", renderStory);
     $("#storySave").addEventListener("click", saveStory);
   }
   async function saveStory() {
     if (!lightboxArt) return;
-    var txt = $("#storyInput").value.trim();
+    var patch = {
+      year: $("#yearInput").value.trim(),
+      medium: $("#mediumInput").value.trim(),
+      story: $("#storyInput").value.trim(),
+    };
     var btn = $("#storySave"); btn.textContent = "Saving…"; btn.disabled = true;
-    var ok = await Cloud.updateArtwork(lightboxArt.id, { story: txt });
+    var ok = await Cloud.updateArtwork(lightboxArt.id, patch);
     if (ok) {
-      lightboxArt.story = txt;
+      Object.assign(lightboxArt, patch);
       var src = ARTWORKS_SRC || [];
-      for (var i = 0; i < src.length; i++) { if (src[i].id === lightboxArt.id) { src[i].story = txt; break; } }
-      toast("Story saved!");
+      for (var i = 0; i < src.length; i++) { if (src[i].id === lightboxArt.id) { Object.assign(src[i], patch); break; } }
+      toast("Saved!");
+      var ml = patch.year || patch.medium ? [patch.year, patch.medium].filter(Boolean).join(" · ") : "";
+      var me = $("#lightboxMeta"); if (me) { me.textContent = ml; me.hidden = !ml; }
       renderStory();
     } else {
-      btn.textContent = "Save story"; btn.disabled = false;
+      btn.textContent = "Save details"; btn.disabled = false;
       toast("Save failed: " + (window.Cloud && Cloud.lastError || "check Firestore rules"));
     }
   }
@@ -247,8 +292,30 @@
     renderGrid();
   };
 
+  function applyViewToggle() {
+    var tg = $("#viewToggle");
+    if (tg) tg.querySelectorAll(".view-opt").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.view === viewMode);
+    });
+    var pr = $("#portfolioPrint"); if (pr) pr.hidden = viewMode !== "portfolio";
+  }
+  function initToolbar() {
+    var tg = $("#viewToggle");
+    if (tg) tg.querySelectorAll(".view-opt").forEach(function (b) {
+      b.addEventListener("click", function () {
+        viewMode = b.dataset.view; store.set("galleryView", viewMode);
+        applyViewToggle(); renderGrid();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+    var pr = $("#portfolioPrint");
+    if (pr) pr.addEventListener("click", function () { window.print(); });
+    applyViewToggle();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     renderFilters();
+    initToolbar();
     renderGrid();
     initLightbox();
     if (window.Cloud && Cloud.enabled) {

@@ -56,6 +56,7 @@
       '<img id="gaPrev" class="admin-art-prev" hidden alt="preview" />' +
       field("gaTitle", "Title", "") +
       field("gaDesc", "Description", "") +
+      '<div class="fav-add-row">' + field("gaYear", "Year", "") + field("gaMedium", "Medium", "") + "</div>" +
       area("gaStory", "The story behind it (optional)", "") +
       field("gaTags", "Tags (comma separated)", "") +
       '<label class="admin-label">Shape<select id="gaAspect" class="gb-input"><option value="square">Square</option><option value="tall">Tall</option><option value="wide">Wide</option></select></label>' +
@@ -89,6 +90,8 @@
       var art = {
         title: $("#gaTitle").value.trim() || "Untitled",
         desc: $("#gaDesc").value.trim(),
+        year: $("#gaYear").value.trim(),
+        medium: $("#gaMedium").value.trim(),
         story: $("#gaStory").value.trim(),
         tags: $("#gaTags").value.split(",").map(function (x) { return x.trim(); }).filter(Boolean),
         aspect: $("#gaAspect").value, img: img,
@@ -102,7 +105,7 @@
   function openArtModal() {
     buildArtModal();
     gArtUpload = null; gArtParsed = null;
-    ["gaTitle", "gaDesc", "gaStory", "gaTags", "gaUrl"].forEach(function (id) { var el = $("#" + id); if (el) el.value = ""; });
+    ["gaTitle", "gaDesc", "gaYear", "gaMedium", "gaStory", "gaTags", "gaUrl"].forEach(function (id) { var el = $("#" + id); if (el) el.value = ""; });
     $("#gaPrev").hidden = true;
     gModal.hidden = false;
   }

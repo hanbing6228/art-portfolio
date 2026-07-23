@@ -50,6 +50,13 @@
     <!-- ============ GALLERY ============ -->
     <section id="gallery" class="page">
       <h2 class="page-title"><span id="galleryTitle">Linrose</span> <span class="ic" data-icon="sparkle"></span></h2>
+      <div class="gallery-toolbar">
+        <div class="view-toggle" id="viewToggle">
+          <button class="view-opt active" data-view="wall">Wall</button>
+          <button class="view-opt" data-view="portfolio">Portfolio</button>
+        </div>
+        <button class="tool-chip portfolio-print" id="portfolioPrint" hidden><span class="ic" data-icon="download"></span> Save as PDF</button>
+      </div>
       <div class="filters" id="filters"></div>
       <div class="grid" id="galleryGrid"></div>
     </section>
@@ -211,6 +218,7 @@
       <button class="lightbox-close" id="lightboxClose" aria-label="Close"><span class="ic" data-icon="close"></span></button>
       <img id="lightboxImg" alt="" />
       <h3 id="lightboxTitle"></h3>
+      <div class="lightbox-meta" id="lightboxMeta" hidden></div>
       <p id="lightboxDesc"></p>
       <div class="lightbox-story-wrap" id="lightboxStoryWrap"></div>
       <div class="art-tags" id="lightboxTags"></div>
