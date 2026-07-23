@@ -99,6 +99,25 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (action === "challenge") {
+      var promptId = String(body.promptId || "").slice(0, 40);
+      if (!promptId) { res.status(400).json({ error: "no prompt" }); return; }
+      var cref = db.collection("wallets").doc(uid);
+      var cres = await db.runTransaction(async function (t) {
+        var d = await t.get(cref);
+        var w = d.exists ? d.data() : { coins: 50, owned: {}, challenges: {} };
+        var done = w.challenges || {};
+        if (done[promptId]) return { already: true, coins: w.coins || 0 };
+        var reward = 15; // server decides the reward — client can't inflate it
+        done[promptId] = true;
+        t.set(cref, { coins: (w.coins || 0) + reward, challenges: done, name: name }, { merge: true });
+        return { reward: reward, coins: (w.coins || 0) + reward };
+      });
+      if (cres.already) { res.json({ ok: false, error: "already-done" }); return; }
+      res.json({ ok: true, reward: cres.reward, coins: cres.coins });
+      return;
+    }
+
     if (action === "cashout") {
       await db.collection("cashouts").add({ uid: uid, name: name, coins: parseInt(body.coins, 10) || 0, status: "pending", created: FV.serverTimestamp() });
       res.json({ ok: true });

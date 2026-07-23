@@ -136,6 +136,23 @@
         return { coins: w.coins, owned: w.owned || {}, bonus: bonus, backend: false };
       } catch (e) { console.warn("[cloud] wallet:", e.message || e); return null; }
     },
+    // award a challenge reward once per prompt (server-authoritative when on)
+    async claimChallenge(id, name, promptId) {
+      var r = await econ("challenge", { uid: id, name: name, promptId: promptId });
+      if (r && !r.unavailable) return r.ok ? { reward: r.reward || 15 } : { already: r.error === "already-done" };
+      // fallback: client Firestore (prototype)
+      if (!(await ok()) || !db) return null;
+      try {
+        var ref = F.doc(db, "wallets", id);
+        var d = await F.getDoc(ref);
+        var w = d.exists() ? d.data() : { coins: 50, challenges: {} };
+        var done = w.challenges || {};
+        if (done[promptId]) return { already: true };
+        done[promptId] = true;
+        await F.setDoc(ref, { coins: (w.coins || 0) + 15, challenges: done, name: name || "Artist" }, { merge: true });
+        return { reward: 15 };
+      } catch (e) { return null; }
+    },
     async requestCashout(id, name, coins) {
       var r = await econ("cashout", { uid: id, name: name, coins: coins });
       if (r && !r.unavailable) return !!r.ok;

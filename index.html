@@ -64,9 +64,10 @@
 
     <!-- ============ DOODLE ============ -->
     <section id="doodle" class="page">
-      <h2 class="page-title">Doodle Pad <span class="ic" data-icon="brush"></span></h2>
-      <p class="page-sub">Draw solo, or draw together with friends live!</p>
-      <div class="doodle-mode" id="doodleMode">
+      <h2 class="page-title">Create <span class="ic" data-icon="brush"></span></h2>
+      <p class="page-sub">Draw something to sell in your shop or share in your gallery!</p>
+      <!-- "Draw Together" (live collab) is hidden for now — kept in the code to revive later -->
+      <div class="doodle-mode" id="doodleMode" hidden>
         <button class="tool-chip mode-btn active" data-mode="solo"><span class="ic" data-icon="doodle"></span> Solo</button>
         <button class="tool-chip mode-btn" data-mode="live" id="liveModeBtn"><span class="ic" data-icon="chat"></span> Together</button>
       </div>
@@ -142,11 +143,11 @@
       </div><!-- /doodle-stage -->
     </section>
 
-    <!-- ============ QUIZ ============ -->
-    <section id="quiz" class="page">
-      <h2 class="page-title">Story Challenge <span class="ic" data-icon="play"></span></h2>
-      <p class="page-sub">Test how well you know the story you love!</p>
-      <div id="quizArea"></div>
+    <!-- ============ CHALLENGES ============ -->
+    <section id="challenges" class="page">
+      <h2 class="page-title">Challenges <span class="ic" data-icon="trophy"></span></h2>
+      <p class="page-sub">Finish a creative challenge, earn coins, and get new art to sell!</p>
+      <div id="challengeList"></div>
     </section>
 
     <!-- ============ SHOP (coin economy) ============ -->
@@ -200,7 +201,7 @@
     <button class="nav-btn" data-target="gallery"><span class="ic" data-icon="gallery"></span>Gallery</button>
     <button class="nav-btn" data-target="favorites"><span class="ic" data-icon="star"></span>Faves</button>
     <button class="nav-btn" data-target="doodle"><span class="ic" data-icon="doodle"></span>Doodle</button>
-    <button class="nav-btn" data-target="quiz"><span class="ic" data-icon="play"></span>Game</button>
+    <button class="nav-btn" data-target="challenges"><span class="ic" data-icon="trophy"></span>Challenges</button>
     <button class="nav-btn" data-target="shop"><span class="ic" data-icon="shop"></span>Shop</button>
   </nav>
 
@@ -232,7 +233,7 @@
   <script src="js/favorites.js"></script>
   <script src="js/doodle.js"></script>
   <script src="js/collab.js"></script>
-  <script src="js/quiz.js"></script>
+  <script src="js/challenges.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/guestbook.js"></script>
   <script src="js/music.js"></script>
